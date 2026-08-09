@@ -12,153 +12,146 @@
 <body>
 <div id="app">
   <header class="app-header">
-    <div class="brand"><div class="brand-mark">P</div><div><h1 data-i18n="app.title">Propagation Studio</h1><p data-i18n="app.subtitle">Construa, simule e exporte eventos SIRV</p></div></div>
+    <div class="brand"><div class="brand-mark">P</div><div><h1>Propagation Studio</h1><p>Construa, simule e exporte eventos SIRV</p></div></div>
     <div class="project-actions">
-      <input id="project-name" class="project-name" value="Novo cenário" aria-label="Nome do projeto" data-i18n="project.nameAria" data-i18n-attr="aria-label">
-      <span id="dirty-badge" class="status-pill warning" data-i18n="status.dirty">Alterações não simuladas</span>
-      <button id="btn-new-project" class="btn ghost" data-i18n="buttons.newProject">Novo</button>
-      <button id="btn-save-project" class="btn ghost" data-i18n="buttons.saveProject">Salvar projeto</button>
-      <button id="btn-import-project" class="btn ghost" data-i18n="buttons.importProject">Importar</button>
-      <div class="language-selector" title="Selecionar idioma" data-i18n="language.label" data-i18n-attr="title">
-        <span class="language-icon" aria-hidden="true">🌐</span>
-        <select id="language-select" aria-label="Selecionar idioma" data-i18n="language.label" data-i18n-attr="aria-label">
-          <option value="pt-BR">PT-BR</option>
-          <option value="en">EN</option>
-        </select>
-      </div>
+      <input id="project-name" class="project-name" value="Novo cenário" aria-label="Nome do projeto">
+      <span id="dirty-badge" class="status-pill warning">Alterações não simuladas</span>
+      <button id="btn-new-project" class="btn ghost">Novo</button>
+      <button id="btn-save-project" class="btn ghost">Salvar projeto</button>
+      <button id="btn-import-project" class="btn ghost">Importar</button>
       <input id="project-file" type="file" accept="application/json,.json" hidden>
     </div>
   </header>
 
   <main class="studio-layout">
-    <aside class="tool-rail" aria-label="Ferramentas de edição" data-i18n="toolbar.ariaLabel" data-i18n-attr="aria-label">
-      <button class="tool active" data-mode="select" title="Selecionar" data-i18n-attr="title" data-i18n="toolbar.selectTooltip"><span>↖</span><small data-i18n="toolbar.select">Selecionar</small></button>
-      <button class="tool" data-mode="add_origin" title="Adicionar origem" data-i18n-attr="title" data-i18n="toolbar.originTooltip"><span>O</span><small data-i18n="toolbar.origin">Origem</small></button>
-      <button class="tool" data-mode="add_focus" title="Adicionar foco" data-i18n-attr="title" data-i18n="toolbar.focusTooltip"><span>F</span><small data-i18n="toolbar.focus">Foco</small></button>
-      <button class="tool" data-mode="add_jump" title="Adicionar salto" data-i18n-attr="title" data-i18n="toolbar.jumpTooltip"><span>↗</span><small data-i18n="toolbar.jump">Salto</small></button>
-      <button class="tool" data-mode="add_barrier" title="Adicionar bloqueio vacinal" data-i18n-attr="title" data-i18n="toolbar.barrierTooltip"><span>X</span><small data-i18n="toolbar.barrier">Bloqueio</small></button>
-      <button class="tool" data-mode="add_preferred" title="Marcar caminho suscetível" data-i18n-attr="title" data-i18n="toolbar.pathTooltip"><span>→</span><small data-i18n="toolbar.path">Caminho</small></button>
-      <button class="tool danger" data-mode="erase" title="Apagar elementos da região" data-i18n-attr="title" data-i18n="toolbar.eraseTooltip"><span>⌫</span><small data-i18n="toolbar.erase">Apagar</small></button>
+    <aside class="tool-rail" aria-label="Ferramentas de edição">
+      <button class="tool active" data-mode="select" title="Selecionar"><span>↖</span><small>Selecionar</small></button>
+      <button class="tool" data-mode="add_origin" title="Adicionar origem"><span>O</span><small>Origem</small></button>
+      <button class="tool" data-mode="add_focus" title="Adicionar foco"><span>F</span><small>Foco</small></button>
+      <button class="tool" data-mode="add_jump" title="Adicionar salto"><span>↗</span><small>Salto</small></button>
+      <button class="tool" data-mode="add_barrier" title="Adicionar bloqueio vacinal"><span>V</span><small>Bloqueio</small></button>
+      <button class="tool" data-mode="add_preferred" title="Marcar caminho suscetível"><span>→</span><small>Caminho</small></button>
+      <button class="tool danger" data-mode="erase" title="Apagar elementos da região"><span>⌫</span><small>Apagar</small></button>
     </aside>
 
     <section class="workspace">
       <div class="canvas-card">
         <div class="canvas-topbar">
           <div class="compartment-selector">
-            <button class="comp-tab active" data-comp="infected" data-i18n="compartments.infected">I · Infectados</button>
-            <button class="comp-tab" data-comp="susceptible" data-i18n="compartments.susceptible">S · Suscetíveis</button>
-            <button class="comp-tab" data-comp="recovered" data-i18n="compartments.recovered">R · Recuperados</button>
-            <button class="comp-tab" data-comp="vaccinated" data-i18n="compartments.vaccinated">V · Vacinados</button>
+            <button class="comp-tab active" data-comp="infected">I · Infectados</button>
+            <button class="comp-tab" data-comp="susceptible">S · Suscetíveis</button>
+            <button class="comp-tab" data-comp="recovered">R · Recuperados</button>
+            <button class="comp-tab" data-comp="vaccinated">V · Vacinados</button>
           </div>
-          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main" data-i18n="buttons.runSimulation">▶ Executar simulação</button><span id="grid-dim-label" class="subtle-label">Grid · 10 × 10</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-fit-grid" class="text-button" data-i18n="buttons.fitGrid">Ajustar</button></div>
+          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main">▶ Executar simulação</button><span id="grid-dim-label" class="subtle-label">Grid · 10 × 10</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-zoom-in" class="icon-button">+</button><button id="btn-fit-grid" class="text-button">Ajustar</button></div>
         </div>
-        <div id="active-mode-bar" class="active-mode-bar"><span class="mode-dot"></span><strong id="mode-title">Selecionar</strong><span id="mode-help">Clique em uma região para inspecionar.</span><button id="btn-cancel-mode" class="text-button danger" hidden data-i18n="buttons.cancel">Cancelar</button></div>
-        <div class="canvas-stage" id="canvas-stage"><canvas id="grid-canvas" aria-label="Espaço espacial interativo" data-i18n="canvas.ariaLabel" data-i18n-attr="aria-label"></canvas></div>
-        <div class="canvas-legend"><span data-i18n="legend.origin"><i class="legend origin"></i>Origem</span><span data-i18n="legend.focus"><i class="legend focus"></i>Foco</span><span data-i18n="legend.jump"><i class="legend jump"></i>Salto</span><span data-i18n="legend.path"><i class="legend path"></i>Caminho · maior suscetibilidade</span><span data-i18n="legend.barrier"><i class="legend barrier"></i>Bloqueio · maior vacinação</span></div>
+        <div id="active-mode-bar" class="active-mode-bar"><span class="mode-dot"></span><strong id="mode-title">Selecionar</strong><span id="mode-help">Clique em uma região para inspecionar.</span><button id="btn-cancel-mode" class="text-button danger" hidden>Cancelar</button></div>
+        <div class="canvas-stage" id="canvas-stage"><canvas id="grid-canvas" aria-label="Espaço espacial interativo"></canvas></div>
+        <div class="canvas-legend"><span><i class="legend origin"></i>Origem</span><span><i class="legend focus"></i>Foco</span><span><i class="legend jump"></i>Salto</span><span><i class="legend path"></i>Caminho · maior suscetibilidade</span><span><i class="legend barrier"></i>Bloqueio · maior vacinação</span></div>
       </div>
 
       <section class="results-drawer" id="bottom-panel">
-        <div class="drawer-head"><div class="bottom-tabs"><button class="bottom-tab active" data-bottom="timeline" data-i18n="timeline.tabTimeline">Linha do tempo</button><button class="bottom-tab" data-bottom="charts" data-i18n="timeline.tabCharts">Gráficos</button><button class="bottom-tab" data-bottom="events" data-i18n="timeline.tabEvents">Eventos</button></div><button id="btn-toggle-bottom" class="text-button" data-i18n="buttons.toggleBottomCollapse">Recolher</button></div>
+        <div class="drawer-head"><div class="bottom-tabs"><button class="bottom-tab active" data-bottom="timeline">Linha do tempo</button><button class="bottom-tab" data-bottom="charts">Gráficos</button><button class="bottom-tab" data-bottom="events">Eventos</button></div><button id="btn-toggle-bottom" class="text-button">Recolher</button></div>
         <div class="bottom-content active" data-bottom-content="timeline">
           <div id="simulation-gate" class="simulation-gate">
-            <div><strong data-i18n="timeline.gateNotReady">Animação ainda não disponível</strong><span data-i18n="timeline.gateNotReadyDetail">Primeiro execute a simulação. Depois use ▶, os passos ou o controle temporal para visualizar a propagação.</span></div>
-            <button id="btn-simulate-timeline" class="btn primary" data-i18n="timeline.runSimulation">Executar simulação</button>
+            <div><strong>Animação ainda não disponível</strong><span>Primeiro execute a simulação. Depois use ▶, os passos ou o controle temporal para visualizar a propagação.</span></div>
+            <button id="btn-simulate-timeline" class="btn primary">Executar simulação</button>
           </div>
-          <div id="timeline-controls" class="timeline-bar"><div class="playback-btns"><button id="btn-reset" class="icon-button" disabled>|◀</button><button id="btn-step-back" class="icon-button" disabled>◀</button><button id="btn-play-pause" class="icon-button primary" disabled>▶</button><button id="btn-step-forward" class="icon-button" disabled>▶|</button></div><input id="time-slider" type="range" min="0" max="0" value="0" disabled><span id="time-step-badge" class="time-badge">t = 0</span><label class="speed-control" data-i18n="timeline.speed">Velocidade <input id="playback-speed" type="range" min="40" max="700" step="20" value="560" disabled></label></div>
+          <div id="timeline-controls" class="timeline-bar"><div class="playback-btns"><button id="btn-reset" class="icon-button" disabled>|◀</button><button id="btn-step-back" class="icon-button" disabled>◀</button><button id="btn-play-pause" class="icon-button primary" disabled>▶</button><button id="btn-step-forward" class="icon-button" disabled>▶|</button></div><input id="time-slider" type="range" min="0" max="0" value="0" disabled><span id="time-step-badge" class="time-badge">t = 0</span><label class="speed-control">Velocidade <input id="playback-speed" type="range" min="40" max="700" step="20" value="180" disabled></label></div>
         </div>
         <div class="bottom-content" data-bottom-content="charts"><div class="charts-grid"><div class="chart-box"><canvas id="global-chart"></canvas></div><div class="chart-box"><canvas id="region-chart"></canvas></div></div></div>
-        <div class="bottom-content" data-bottom-content="events"><div id="event-log" class="event-log empty-state" data-i18n="events.empty">Execute uma simulação para visualizar os eventos.</div></div>
+        <div class="bottom-content" data-bottom-content="events"><div id="event-log" class="event-log empty-state">Execute uma simulação para visualizar os eventos.</div></div>
       </section>
     </section>
 
     <aside class="properties-shell">
       <div class="properties-tabs">
-        <button class="property-tab active" data-panel="space" data-i18n="panels.space">Espaço</button>
-        <button class="property-tab" data-panel="sirv" data-i18n="panels.sirv">SIRV</button>
-        <button class="property-tab" data-panel="propagation" data-i18n="panels.propagation">Propagação</button>
-        <button class="property-tab" data-panel="region" data-i18n="panels.region">Região</button>
-        <button class="property-tab" data-panel="runs" data-i18n="panels.runs">Execuções</button>
-        <button class="property-tab" data-panel="analysis" data-i18n="panels.analysis">Análises</button>
+        <button class="property-tab active" data-panel="space">Espaço</button>
+        <button class="property-tab" data-panel="sirv">SIRV</button>
+        <button class="property-tab" data-panel="propagation">Propagação</button>
+        <button class="property-tab" data-panel="region">Região</button>
+        <button class="property-tab" data-panel="runs">Execuções</button>
+        <button class="property-tab" data-panel="analysis">Análises</button>
       </div>
       <div class="properties-scroll">
         <section class="property-content active" data-panel-content="space">
-          <div class="panel-heading"><h2 data-i18n="space.heading">Espaço</h2><p data-i18n="space.description">Escolha a representação espacial. Todas usam o mesmo simulador SIRV.</p></div>
+          <div class="panel-heading"><h2>Espaço</h2><p>Escolha a representação espacial. Todas usam o mesmo simulador SIRV.</p></div>
           <div class="space-mode-grid">
-            <button class="space-mode-card active" data-space-mode="grid"><strong data-i18n="space.gridMode">Grid</strong><span data-i18n="space.gridModeDescription">Grade regular configurável.</span></button>
-            <button class="space-mode-card" data-space-mode="synthetic_map"><strong data-i18n="space.syntheticMode">Mapa sintético</strong><span data-i18n="space.syntheticModeDescription">Polígonos irregulares.</span></button>
-            <button class="space-mode-card" data-space-mode="geojson"><strong data-i18n="space.geojsonMode">Importar mapa</strong><span data-i18n="space.geojsonModeDescription">GeoJSON processado localmente.</span></button>
+            <button class="space-mode-card active" data-space-mode="grid"><strong>Grid</strong><span>Grade regular configurável.</span></button>
+            <button class="space-mode-card" data-space-mode="synthetic_map"><strong>Mapa sintético</strong><span>Polígonos irregulares.</span></button>
+            <button class="space-mode-card" data-space-mode="geojson"><strong>Importar mapa</strong><span>GeoJSON processado localmente.</span></button>
           </div>
           <div id="active-space-summary" class="seed-summary"></div>
 
           <div id="grid-space-fields" class="space-config-block">
-            <h3 data-i18n="space.gridHeading">Configuração do grid</h3>
-            <div class="form-grid two"><label data-i18n="space.gridRows">Linhas<input id="grid-rows" type="number" min="2" max="80"></label><label data-i18n="space.gridColumns">Colunas<input id="grid-cols" type="number" min="2" max="80"></label></div>
-            <div class="form-grid"><label data-i18n="space.gridNeighborhood">Vizinhança<select id="grid-neighborhood"><option value="moore" data-i18n="space.gridNeighborhoodOptionMoore">8 vizinhos (Moore)</option><option value="von_neumann" data-i18n="space.gridNeighborhoodOptionVonNeumann">4 vizinhos</option></select></label><label data-i18n="space.gridBorder">Bordas<select id="grid-border"><option value="normal" data-i18n="space.gridBorderOptionNormal">Normais</option><option value="toroidal" data-i18n="space.gridBorderOptionToroidal">Toroidais</option></select></label></div>
-            <label class="check-row"><input id="grid-random-pop" type="checkbox"> <span data-i18n="space.gridRandomPopulation">População aleatória por região</span></label>
-            <div id="uniform-pop-fields"><label data-i18n="space.gridPopulation">População por região<input id="grid-pop" type="number" min="1"></label></div>
-            <div id="random-pop-fields" class="form-grid two" hidden><label data-i18n="space.gridMinPopulation">Mínima<input id="grid-min-pop" type="number" min="1"></label><label data-i18n="space.gridMaxPopulation">Máxima<input id="grid-max-pop" type="number" min="1"></label><label data-i18n="space.gridPopulationSeed">Semente da população<input id="grid-pop-seed" type="number"></label></div>
-            <button id="btn-apply-grid" class="btn primary wide" data-i18n="buttons.applyGrid">Aplicar / recriar grid</button>
+            <h3>Configuração do grid</h3>
+            <div class="form-grid two"><label>Linhas<input id="grid-rows" type="number" min="2" max="80"></label><label>Colunas<input id="grid-cols" type="number" min="2" max="80"></label></div>
+            <div class="form-grid"><label>Vizinhança<select id="grid-neighborhood"><option value="moore">8 vizinhos (Moore)</option><option value="von_neumann">4 vizinhos</option></select></label><label>Bordas<select id="grid-border"><option value="normal">Normais</option><option value="toroidal">Toroidais</option></select></label></div>
+            <label class="check-row"><input id="grid-random-pop" type="checkbox"> População aleatória por região</label>
+            <div id="uniform-pop-fields"><label>População por região<input id="grid-pop" type="number" min="1"></label></div>
+            <div id="random-pop-fields" class="form-grid two" hidden><label>Mínima<input id="grid-min-pop" type="number" min="1"></label><label>Máxima<input id="grid-max-pop" type="number" min="1"></label><label>Semente da população<input id="grid-pop-seed" type="number"></label></div>
+            <button id="btn-apply-grid" class="btn primary wide">Aplicar / recriar grid</button>
           </div>
 
           <div id="synthetic-space-fields" class="space-config-block" hidden>
-            <h3 data-i18n="space.syntheticHeading">Mapa sintético</h3>
-            <p class="hint" data-i18n="space.syntheticHint">Gera células de Voronoi contíguas. A seed espacial controla apenas a geometria; a seed do experimento continua controlando S/V e a propagação.</p>
-            <div class="form-grid two"><label data-i18n="space.syntheticRegions">Número de regiões<input id="synthetic-count" type="number" min="4" max="120" value="30"></label><label data-i18n="space.syntheticSeed">Seed espacial<input id="synthetic-seed" type="number" value="4321"></label><label data-i18n="space.syntheticIrregularity">Irregularidade (0–1)<input id="synthetic-irregularity" type="number" min="0" max="1" step="0.05" value="0.85"></label><label data-i18n="space.syntheticPopulation">População por região<input id="synthetic-pop" type="number" min="1" value="1000"></label></div>
-            <button id="btn-build-synthetic" class="btn primary wide" data-i18n="buttons.buildSynthetic">Gerar mapa sintético</button>
+            <h3>Mapa sintético</h3>
+            <p class="hint">Gera células de Voronoi contíguas. A seed espacial controla apenas a geometria; a seed do experimento continua controlando S/V e a propagação.</p>
+            <div class="form-grid two"><label>Número de regiões<input id="synthetic-count" type="number" min="4" max="120" value="30"></label><label>Seed espacial<input id="synthetic-seed" type="number" value="4321"></label><label>Irregularidade (0–1)<input id="synthetic-irregularity" type="number" min="0" max="1" step="0.05" value="0.85"></label><label>População por região<input id="synthetic-pop" type="number" min="1" value="1000"></label></div>
+            <button id="btn-build-synthetic" class="btn primary wide">Gerar mapa sintético</button>
           </div>
 
           <div id="geojson-space-fields" class="space-config-block" hidden>
-            <h3 data-i18n="space.geojsonHeading">Importar mapa real</h3>
-            <p class="hint" data-i18n-html="space.geojsonHintHtml">Aceita <b>FeatureCollection</b> com geometrias <b>Polygon</b> ou <b>MultiPolygon</b>. O arquivo é processado somente no navegador.</p>
-            <button id="btn-select-geojson" class="btn ghost wide" data-i18n="buttons.selectGeoJSON">Selecionar GeoJSON</button>
+            <h3>Importar mapa real</h3>
+            <p class="hint">Aceita <b>FeatureCollection</b> com geometrias <b>Polygon</b> ou <b>MultiPolygon</b>. O arquivo é processado somente no navegador.</p>
+            <button id="btn-select-geojson" class="btn ghost wide">Selecionar GeoJSON</button>
             <input id="geojson-file" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
             <div id="geojson-import-config" hidden>
               <div id="geojson-summary" class="seed-summary"></div>
-              <div class="form-grid"><label data-i18n="space.geojsonId">Campo de ID<select id="geojson-id-prop"></select></label><label data-i18n="space.geojsonName">Campo de nome<select id="geojson-name-prop"></select></label><label data-i18n="space.geojsonPopulation">Campo de população<select id="geojson-pop-prop"></select></label><label data-i18n="space.geojsonDefaultPopulation">População padrão quando ausente<input id="geojson-default-pop" type="number" min="1" value="1000"></label></div>
-              <details open><summary data-i18n="space.geojsonConnectivity">Conectividade do mapa</summary><label data-i18n="space.geojsonMethod">Método<select id="map-adjacency-method"><option value="shared_border" data-i18n="space.geojsonMethodOptionSharedBorder">Fronteira compartilhada</option><option value="nearest" data-i18n="space.geojsonMethodOptionNearest">Vizinhos mais próximos</option></select></label><div id="map-shared-options"><label data-i18n="space.geojsonTolerance">Tolerância geométrica <input id="map-border-tolerance" type="number" min="0" step="any" placeholder="Automática" data-i18n-placeholder="space.geojsonAutomatic"></label></div><div id="map-nearest-options" hidden><label data-i18n="space.geojsonNearest">Vizinhos por região<input id="map-nearest-k" type="number" min="1" max="12" value="4"></label></div></details>
-              <button id="btn-apply-geojson" class="btn primary wide" data-i18n="buttons.useMap">Usar este mapa</button>
+              <div class="form-grid"><label>Campo de ID<select id="geojson-id-prop"></select></label><label>Campo de nome<select id="geojson-name-prop"></select></label><label>Campo de população<select id="geojson-pop-prop"></select></label><label>População padrão quando ausente<input id="geojson-default-pop" type="number" min="1" value="1000"></label></div>
+              <details open><summary>Conectividade do mapa</summary><label>Método<select id="map-adjacency-method"><option value="shared_border">Fronteira compartilhada</option><option value="nearest">Vizinhos mais próximos</option></select></label><div id="map-shared-options"><label>Tolerância geométrica <input id="map-border-tolerance" type="number" min="0" step="any" placeholder="Automática"></label></div><div id="map-nearest-options" hidden><label>Vizinhos por região<input id="map-nearest-k" type="number" min="1" max="12" value="4"></label></div></details>
+              <button id="btn-apply-geojson" class="btn primary wide">Usar este mapa</button>
             </div>
           </div>
-          <p class="hint danger-text" data-i18n="space.spaceChangeWarning">Trocar ou recriar o espaço remove origens, focos, saltos, bloqueios, caminhos e execuções atuais.</p>
+          <p class="hint danger-text">Trocar ou recriar o espaço remove origens, focos, saltos, bloqueios, caminhos e execuções atuais.</p>
         </section>
 
         <section class="property-content" data-panel-content="sirv">
-          <div class="panel-heading"><h2 data-i18n="sirv.heading">Modelo SIRV</h2><p data-i18n="sirv.description">Todos os parâmetros são editáveis.</p></div>
-          <div class="form-grid two"><label data-i18n="sirv.beta">β · transmissão<input id="sim-beta" type="number" min="0" step="0.01"></label><label data-i18n="sirv.gamma">γ · recuperação<input id="sim-gamma" type="number" min="0" max="1" step="0.01"></label><label data-i18n="sirv.nu">ν · vacinação durante a simulação<input id="sim-nu" type="number" min="0" max="1" step="0.001"></label><label data-i18n="sirv.mobility">Mobilidade<input id="sim-mobility" type="number" min="0" step="0.01"></label><label data-i18n="sirv.localWeight">Peso local<input id="sim-local-weight" type="number" min="0" step="0.05"></label><label data-i18n="sirv.spatialWeight">Peso espacial<input id="sim-spatial-weight" type="number" min="0" step="0.05"></label><label data-i18n="sirv.noise">Ruído<input id="sim-noise" type="number" min="0" max="1" step="0.01"></label><label data-i18n="sirv.timeSteps">Passos temporais<input id="sim-steps" type="number" min="1" max="1000"></label><label data-i18n="sirv.unit">Unidade<input id="sim-unit" type="text"></label><label data-i18n="sirv.seed">Semente do experimento<input id="sim-seed" type="number"></label></div>
-          <details open class="initial-conditions-box"><summary data-i18n="sirv.seededHeading">Condições iniciais geradas pela semente</summary><p class="hint" data-i18n="sirv.seededDescription">A mesma semente recria exatamente o mesmo padrão espacial de suscetíveis e vacinados. Uma semente diferente altera esse padrão antes da propagação começar.</p><div class="form-grid two"><label data-i18n="sirv.initialVaccination">Vacinação média inicial (%)<input id="sim-initial-vaccination" type="number" min="0" max="100" step="1"></label><label data-i18n="sirv.vaccinationVariation">Variação regional (± pontos %)<input id="sim-vaccination-variation" type="number" min="0" max="100" step="1"></label></div><div id="seeded-conditions-summary" class="seed-summary"></div></details>
-          <button id="btn-random-seed" class="btn ghost wide" data-i18n="buttons.randomSeed">Gerar nova semente e novas condições iniciais</button>
+          <div class="panel-heading"><h2>Modelo SIRV</h2><p>Todos os parâmetros são editáveis.</p></div>
+          <div class="form-grid two"><label>β · transmissão<input id="sim-beta" type="number" min="0" step="0.01"></label><label>γ · recuperação<input id="sim-gamma" type="number" min="0" max="1" step="0.01"></label><label>ν · vacinação durante a simulação<input id="sim-nu" type="number" min="0" max="1" step="0.001"></label><label>Mobilidade<input id="sim-mobility" type="number" min="0" step="0.01"></label><label>Peso local<input id="sim-local-weight" type="number" min="0" step="0.05"></label><label>Peso espacial<input id="sim-spatial-weight" type="number" min="0" step="0.05"></label><label>Ruído<input id="sim-noise" type="number" min="0" max="1" step="0.01"></label><label>Passos temporais<input id="sim-steps" type="number" min="1" max="1000"></label><label>Unidade<input id="sim-unit" type="text"></label><label>Semente do experimento<input id="sim-seed" type="number"></label></div>
+          <details open class="initial-conditions-box"><summary>Condições iniciais geradas pela semente</summary><p class="hint">A mesma semente recria exatamente o mesmo padrão espacial de suscetíveis e vacinados. Uma semente diferente altera esse padrão antes da propagação começar.</p><div class="form-grid two"><label>Vacinação média inicial (%)<input id="sim-initial-vaccination" type="number" min="0" max="100" step="1"></label><label>Variação regional (± pontos %)<input id="sim-vaccination-variation" type="number" min="0" max="100" step="1"></label></div><div id="seeded-conditions-summary" class="seed-summary"></div></details>
+          <button id="btn-random-seed" class="btn ghost wide">Gerar nova semente e novas condições iniciais</button>
         </section>
 
         <section class="property-content" data-panel-content="propagation">
-          <div class="panel-heading"><h2 data-i18n="panels.propagation">Propagação</h2><p data-i18n="panels.propagationDescription">Combine livremente todas as estruturas do evento.</p></div>
-          <details open><summary data-i18n="direction.heading">Direção espacial</summary><label class="check-row" data-i18n="direction.enabled"><input id="direction-enabled" type="checkbox"> Aplicar anisotropia direcional</label><label data-i18n="direction.direction">Direção<select id="direction-key"></select></label><label data-i18n="direction.profile">Perfil<select id="direction-profile"><option value="strict" data-i18n="direction.profileStrict">Estrito</option><option value="cone" data-i18n="direction.profileCone">Cone</option><option value="soft" data-i18n="direction.profileSoft">Suave</option></select></label><div class="form-grid two"><label data-i18n="direction.coneAngle">Abertura do cone<input id="direction-cone" type="number" min="5" max="90"></label><label data-i18n="direction.softStrength">Força suave<input id="direction-strength" type="number" min="0" max="12" step="0.5"></label><label data-i18n="direction.forwardWeight">Peso frontal<input id="direction-forward" type="number" min="0" step="0.1"></label><label data-i18n="direction.lateralLeak">Vazamento lateral<input id="direction-lateral" type="number" min="0" max="1" step="0.01"></label><label data-i18n="direction.backwardLeak">Retropropagação<input id="direction-backward" type="number" min="0" max="1" step="0.01"></label><label data-i18n="direction.diagonalPenalty">Penalidade diagonal<input id="direction-diagonal" type="number" min="0" max="1" step="0.01"></label></div></details>
-          <div class="scenario-summary"><div><strong id="count-origins">0</strong><span data-i18n="scenario.origins">origens</span></div><div><strong id="count-focuses">0</strong><span data-i18n="scenario.focuses">focos</span></div><div><strong id="count-jumps">0</strong><span data-i18n="scenario.jumps">saltos</span></div><div><strong id="count-barriers">0</strong><span data-i18n="scenario.blockedRegions">regiões bloqueadas</span></div><div><strong id="count-paths">0</strong><span data-i18n="scenario.pathRegions">regiões no caminho</span></div></div>
-          <details open><summary data-i18n="toolsSettings.heading">Propriedades das ferramentas</summary><div class="form-grid two"><label data-i18n="toolsSettings.pathSusceptibility">Suscetibilidade do caminho (×)<input id="path-susceptibility-default" type="number" min="1" max="10" step="0.1"></label><label data-i18n="toolsSettings.blockVaccination">Vacinação do bloqueio (%)<input id="barrier-vaccination-default" type="number" min="0" max="100" step="1"></label></div><p class="hint" data-i18n="toolsSettings.description">Caminho aumenta a chance de infecção das regiões marcadas. Bloqueio aumenta a vacinação inicial; com 100%, a região fica sem suscetíveis e funciona como bloqueio total.</p></details>
+          <div class="panel-heading"><h2>Propagação</h2><p>Combine livremente todas as estruturas do evento.</p></div>
+          <details open><summary>Direção espacial</summary><label class="check-row"><input id="direction-enabled" type="checkbox"> Aplicar anisotropia direcional</label><label>Direção<select id="direction-key"></select></label><label>Perfil<select id="direction-profile"><option value="strict">Estrito</option><option value="cone">Cone</option><option value="soft">Suave</option></select></label><div class="form-grid two"><label>Abertura do cone<input id="direction-cone" type="number" min="5" max="90"></label><label>Força suave<input id="direction-strength" type="number" min="0" max="12" step="0.5"></label><label>Peso frontal<input id="direction-forward" type="number" min="0" step="0.1"></label><label>Vazamento lateral<input id="direction-lateral" type="number" min="0" max="1" step="0.01"></label><label>Retropropagação<input id="direction-backward" type="number" min="0" max="1" step="0.01"></label><label>Penalidade diagonal<input id="direction-diagonal" type="number" min="0" max="1" step="0.01"></label></div></details>
+          <div class="scenario-summary"><div><strong id="count-origins">0</strong><span>origens</span></div><div><strong id="count-focuses">0</strong><span>focos</span></div><div><strong id="count-jumps">0</strong><span>saltos</span></div><div><strong id="count-barriers">0</strong><span>regiões bloqueadas</span></div><div><strong id="count-paths">0</strong><span>regiões no caminho</span></div></div>
+          <details open><summary>Propriedades das ferramentas</summary><div class="form-grid two"><label>Suscetibilidade do caminho (×)<input id="path-susceptibility-default" type="number" min="1" max="10" step="0.1"></label><label>Vacinação do bloqueio (%)<input id="barrier-vaccination-default" type="number" min="0" max="100" step="1"></label></div><p class="hint">Caminho aumenta a chance de infecção das regiões marcadas. Bloqueio aumenta a vacinação inicial; com 100%, a região fica sem suscetíveis e funciona como bloqueio total.</p></details>
           <div class="barrier-explainer">
-            <strong data-i18n="barrier.heading">Bloqueio agora é uma propriedade da região.</strong>
-            <p data-i18n-html="barrier.descriptionHtml">Clique em uma ou várias regiões com a ferramenta <b>Bloqueio</b>. A cobertura vacinal configurada é aplicada à população inicial. Com <b>100% vacinada</b>, S = 0 e a propagação não atravessa aquela região. Para criar uma parede, marque uma sequência de regiões.</p>
-          <button id="btn-check-isolation" class="btn ghost wide" data-i18n="buttons.checkIsolation">Verificar isolamento pelas barreiras</button><div id="isolation-result" class="seed-summary"></div>
+            <strong>Bloqueio agora é uma propriedade da região.</strong>
+            <p>Clique em uma ou várias regiões com a ferramenta <b>Bloqueio</b>. A cobertura vacinal configurada é aplicada à população inicial. Com <b>100% vacinada</b>, S = 0 e a propagação não atravessa aquela região. Para criar uma parede, marque uma sequência de regiões.</p>
+          <button id="btn-check-isolation" class="btn ghost wide">Verificar isolamento pelas barreiras</button><div id="isolation-result" class="seed-summary"></div>
           </div>
           <div id="scenario-lists"></div>
         </section>
 
         <section class="property-content" data-panel-content="region">
-          <div class="panel-heading"><h2 data-i18n="region.heading">Região</h2><p id="region-caption" data-i18n="region.selectPrompt">Selecione uma região no espaço.</p></div>
-          <div id="region-form" hidden><label class="check-row" data-i18n="region.manualInitial"><input id="region-manual-initial" type="checkbox"> Manter S/V manuais nesta região (não regenerar pela semente)</label><div class="form-grid two"><label data-i18n="region.population">População<input id="region-pop" type="number" min="1"></label><label data-i18n="region.initialSusceptible">Suscetíveis iniciais<input id="region-s" type="number" min="0" readonly></label><label data-i18n="region.initialInfected">Infectados iniciais<input id="region-i" type="number" min="0"></label><label data-i18n="region.initialRecovered">Recuperados iniciais<input id="region-r" type="number" min="0"></label><label data-i18n="region.initialVaccinated">Vacinados iniciais<input id="region-v" type="number" min="0"></label><label data-i18n="region.localSusceptibility">Suscetibilidade local (×)<input id="region-susc-m" type="number" min="0" step="0.1"></label><label data-i18n="region.betaMultiplier">Multiplicador β<input id="region-beta-m" type="number" min="0" step="0.1"></label><label data-i18n="region.gammaMultiplier">Multiplicador γ<input id="region-gamma-m" type="number" min="0" step="0.1"></label><label data-i18n="region.nuMultiplier">Multiplicador ν<input id="region-nu-m" type="number" min="0" step="0.1"></label><label data-i18n="region.mobilityMultiplier">Multiplicador mobilidade<input id="region-mobility-m" type="number" min="0" step="0.1"></label></div><div id="region-derived-info" class="seed-summary"></div><button id="btn-save-region" class="btn primary wide" data-i18n="buttons.saveRegion">Aplicar à região</button></div>
+          <div class="panel-heading"><h2>Região</h2><p id="region-caption">Selecione uma região no espaço.</p></div>
+          <div id="region-form" hidden><label class="check-row"><input id="region-manual-initial" type="checkbox"> Manter S/V manuais nesta região (não regenerar pela semente)</label><div class="form-grid two"><label>População<input id="region-pop" type="number" min="1"></label><label>Suscetíveis iniciais<input id="region-s" type="number" min="0" readonly></label><label>Infectados iniciais<input id="region-i" type="number" min="0"></label><label>Recuperados iniciais<input id="region-r" type="number" min="0"></label><label>Vacinados iniciais<input id="region-v" type="number" min="0"></label><label>Suscetibilidade local (×)<input id="region-susc-m" type="number" min="0" step="0.1"></label><label>Multiplicador β<input id="region-beta-m" type="number" min="0" step="0.1"></label><label>Multiplicador γ<input id="region-gamma-m" type="number" min="0" step="0.1"></label><label>Multiplicador ν<input id="region-nu-m" type="number" min="0" step="0.1"></label><label>Multiplicador mobilidade<input id="region-mobility-m" type="number" min="0" step="0.1"></label></div><div id="region-derived-info" class="seed-summary"></div><button id="btn-save-region" class="btn primary wide">Aplicar à região</button></div>
         </section>
 
         <section class="property-content" data-panel-content="runs">
-          <div class="panel-heading"><h2 data-i18n="panels.runs">Execuções</h2><p data-i18n="panels.runsDescription">Execute a simulação para gerar os dados e habilitar a animação, os gráficos e a linha do tempo.</p></div>
-          <button id="btn-simulate" class="btn primary wide large" data-i18n="buttons.runSimulation">Executar simulação</button>
-          <div id="run-warning" class="inline-message warning" hidden data-i18n="runs.staleWarning">O cenário mudou após esta execução. A simulação selecionada continua disponível, mas não representa a configuração atual.</div>
+          <div class="panel-heading"><h2>Execuções</h2><p>Execute a simulação para gerar os dados e habilitar a animação, os gráficos e a linha do tempo.</p></div>
+          <button id="btn-simulate" class="btn primary wide large">Executar simulação</button>
+          <div id="run-warning" class="inline-message warning" hidden>O cenário mudou após esta execução. A simulação selecionada continua disponível, mas não representa a configuração atual.</div>
           <div id="runs-list" class="runs-list"></div>
-          <div id="selected-run-actions" hidden><label data-i18n="runNotes.label">Notas da execução<textarea id="run-notes" rows="3"></textarea></label><div class="button-row"><button id="btn-approve-run" class="btn success" data-i18n="buttons.approveRun">Aprovar</button><button id="btn-reject-run" class="btn danger" data-i18n="buttons.rejectRun">Rejeitar</button></div><hr><h3 data-i18n="runNotes.downloadHeading">Baixar execução</h3><div class="download-grid"><button data-export="run-json" class="btn ghost">simulation.json</button><button data-export="temporal" class="btn ghost">temporal.csv</button><button data-export="regions" class="btn ghost">regions.csv</button><button data-export="events" class="btn ghost">events.csv</button><button data-export="edges" class="btn ghost">edges.csv</button><button data-export="summary" class="btn ghost">summary.json</button><button id="btn-export-geojson" data-export="geojson" class="btn ghost">regions.geojson</button></div></div>
+          <div id="selected-run-actions" hidden><label>Notas da execução<textarea id="run-notes" rows="3"></textarea></label><div class="button-row"><button id="btn-approve-run" class="btn success">Aprovar</button><button id="btn-reject-run" class="btn danger">Rejeitar</button></div><hr><h3>Baixar execução</h3><div class="download-grid"><button data-export="run-json" class="btn ghost">simulation.json</button><button data-export="temporal" class="btn ghost">temporal.csv</button><button data-export="regions" class="btn ghost">regions.csv</button><button data-export="events" class="btn ghost">events.csv</button><button data-export="edges" class="btn ghost">edges.csv</button><button data-export="summary" class="btn ghost">summary.json</button><button id="btn-export-geojson" data-export="geojson" class="btn ghost">regions.geojson</button></div></div>
         </section>
 
         <section class="property-content" data-panel-content="analysis">
-          <div class="panel-heading"><h2 data-i18n="panels.analysis">Análises</h2><p data-i18n="panels.analysisDescription">Métricas automáticas da execução selecionada; não limitam a criação do evento.</p></div>
-          <div class="form-grid two"><label data-i18n="analysis.arrivalThreshold">Limiar de chegada<input id="analysis-threshold" type="number" min="1"></label><label data-i18n="analysis.referenceRegion">Região de referência<select id="analysis-reference"><option value="" data-i18n="common.none">Nenhuma</option></select></label></div>
-          <div id="analysis-panel" class="analysis-panel empty-state" data-i18n="analysis.empty">Execute uma simulação para calcular métricas.</div>
+          <div class="panel-heading"><h2>Análises</h2><p>Métricas automáticas da execução selecionada; não limitam a criação do evento.</p></div>
+          <div class="form-grid two"><label>Limiar de chegada<input id="analysis-threshold" type="number" min="1"></label><label>Região de referência<select id="analysis-reference"><option value="">Nenhuma</option></select></label></div>
+          <div id="analysis-panel" class="analysis-panel empty-state">Execute uma simulação para calcular métricas.</div>
         </section>
       </div>
     </aside>
