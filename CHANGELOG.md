@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.4.1
+
+- Ajustado o seletor PT-BR/EN para seguir o padrão visual do cabeçalho.
+- Seletor de idioma agora usa o mesmo contraste, altura, borda, raio e estados de foco/hover dos controles superiores.
+- Removido o rótulo externo do idioma para reduzir ruído visual; a acessibilidade permanece via `aria-label` e `title`.
+
 ## 4.4.0
 
 - Adicionado seletor espacial com Grid, Mapa sintético e Importar mapa.

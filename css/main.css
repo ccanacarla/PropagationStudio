@@ -83,7 +83,6 @@ h1, h2, h3, p {
     gap: 8px
 }
 
-
 .project-name {
     width: 240px;
     background: #172033;
@@ -91,6 +90,60 @@ h1, h2, h3, p {
     color: white;
     border-radius: 8px;
     padding: 8px 10px
+}
+
+.language-selector {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    background: transparent;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    transition: background .15s ease, border-color .15s ease
+}
+
+.language-selector:hover {
+    background: #1e293b
+}
+
+.language-selector:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px #1e3a5f
+}
+
+.language-icon {
+    font-size: 13px;
+    line-height: 1;
+    opacity: .9
+}
+
+.language-selector select {
+    width: auto;
+    min-width: 54px;
+    height: 32px;
+    border: 0;
+    border-radius: 0;
+    padding: 0 18px 0 0;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 650;
+    outline: none;
+    box-shadow: none;
+    cursor: pointer
+}
+
+.language-selector select:focus {
+    border: 0;
+    box-shadow: none
+}
+
+.language-selector select option {
+    background: #172033;
+    color: #e2e8f0
 }
 
 .btn {
