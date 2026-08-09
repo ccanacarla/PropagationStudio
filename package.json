@@ -1,0 +1,10 @@
+{
+  "name": "propagation-studio",
+  "version": "4.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/core-tests.js",
+    "serve": "python3 -m http.server 8000"
+  }
+}
