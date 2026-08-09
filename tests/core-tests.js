@@ -4,7 +4,9 @@ import { runSIRVSimulation } from '../js/simulation/sirv.js';
 import { buildWeightedEdges } from '../js/spatial/edges.js';
 import { buildInitialRegions } from '../js/simulation/initial-conditions.js';
 import { analyzeRun } from '../js/analytics/summary.js';
-import { projectJSON, temporalCSV, eventsCSV, edgesCSV, regionsCSV, serializeRun, deserializeRun } from '../js/export/files.js';
+import { projectJSON, temporalCSV, eventsCSV, edgesCSV, regionsCSV, regionsGeoJSON, serializeRun, deserializeRun } from '../js/export/files.js';
+import { createSyntheticMap } from '../js/spatial/map/synthetic-map.js';
+import { validateGeoJSON, normalizeGeoJSON, buildGeoJSONTopology } from '../js/spatial/map/geojson.js';
 
 let passed=0,failed=0;
 const assert=(c,n)=>{if(c){console.log(`[PASSOU] ${n}`);passed++;}else{console.error(`[FALHOU] ${n}`);failed++;}};
@@ -13,7 +15,7 @@ const sim={seed:12345,timeSteps:45,beta:.38,gamma:.08,nu:0,mobility:.65,localTra
 const direction={enabled:true,direction:'radial',directionProfile:'cone',coneAngle:35,directionStrength:5,forwardWeight:1,lateralLeak:.03,backwardLeak:0,diagonalPenalty:.85};
 const empty=()=>({origins:[],focuses:[],jumps:[],vaccinationBarriers:[],pathRegions:[],pathSettings:{susceptibilityMultiplier:2.5},barrierSettings:{vaccinationCoverage:100},direction:{...direction}});
 const run=(propagation,s=sim,g=grid,regions=createGrid(g.rows,g.columns,g))=>runSIRVSimulation({gridConfig:g,simulationConfig:s,regions,propagation});
-console.log('=== TESTES PROPAGATION STUDIO 4.2 ===');
+console.log('=== TESTES PROPAGATION STUDIO 4.4 ===');
 
 // Initial seeded heterogeneity
 const raw=createGrid(5,5,{...grid,rows:5,columns:5});
@@ -86,15 +88,41 @@ assert(mockRun.summary.reachedRegions>1&&mockRun.summary.peakRegion.regionId,'An
 assert(mockRun.summary.observedDirection.direction==='east','Análise automática reconhece direção observada leste');
 
 const serialized=serializeRun(mockRun),restored=deserializeRun(serialized);assert(restored.history[0] instanceof Map&&restored.history.length===mockRun.history.length,'Execuções podem ser serializadas e reabertas');
-const mockState={project:{name:'Teste',schemaVersion:'4.2.0'},grid,simulationConfig:sim,propagation:strict,regions:initA,analysisOptions:{arrivalThreshold:2,referenceRegionId:null},dirty:false,runs:[mockRun]};const pj=projectJSON(mockState,true);
-assert(pj.includes('"schemaVersion": "4.2.0"')&&pj.includes('initialVaccinationPct')&&!pj.includes('groundTruth'),'Projeto 4.2 salva seed, condições iniciais e não contém atividades');
+const mockState={project:{name:'Teste',schemaVersion:'4.4.0'},space:{mode:'grid',synthetic:{},geojson:{}},grid,simulationConfig:sim,propagation:strict,regions:initA,analysisOptions:{arrivalThreshold:2,referenceRegionId:null},dirty:false,runs:[mockRun]};const pj=projectJSON(mockState,true);
+assert(pj.includes('\"schemaVersion\": \"4.4.0\"')&&pj.includes('initialVaccinationPct')&&!pj.includes('groundTruth'),'Projeto 4.4 salva espaço, seed e condições iniciais sem atividades');
 assert(temporalCSV(mockRun).includes('path_susceptibility_multiplier')&&eventsCSV(mockRun).includes('origin_injected'),'Exportação temporal inclui modificadores regionais e eventos reais');
 assert(edgesCSV(mockRun).includes('effectiveWeight')&&regionsCSV(mockRun).includes('initial_vaccinated_pct'),'Exportações de arestas e regiões incluem condições iniciais');
+
+
+
+// Spatial maps
+const syntheticA=createSyntheticMap({regionCount:24,spatialSeed:99,irregularity:.9,defaultPopulation:900});
+const syntheticB=createSyntheticMap({regionCount:24,spatialSeed:99,irregularity:.9,defaultPopulation:900});
+assert(syntheticA.size===24&&[...syntheticA.values()].every(r=>r.geometry?.type==='Polygon'),'Mapa sintético gera polígonos para todas as regiões');
+assert(JSON.stringify([...syntheticA.values()].map(r=>r.geometry))===JSON.stringify([...syntheticB.values()].map(r=>r.geometry)),'Seed espacial reproduz exatamente o mapa sintético');
+assert([...syntheticA.values()].every(r=>(r.neighbors||[]).length>0),'Mapa sintético gera topologia conectada sem regiões isoladas no exemplo');
+
+const simpleGeo={type:'FeatureCollection',features:[
+ {type:'Feature',properties:{code:'A',name:'Alpha',pop:1000},geometry:{type:'Polygon',coordinates:[[[0,0],[1,0],[1,1],[0,1],[0,0]]]}},
+ {type:'Feature',properties:{code:'B',name:'Beta',pop:1200},geometry:{type:'Polygon',coordinates:[[[1,0],[2,0],[2,1],[1,1],[1,0]]]}},
+ {type:'Feature',properties:{code:'C',name:'Gamma',pop:800},geometry:{type:'Polygon',coordinates:[[[2,0],[3,0],[3,1],[2,1],[2,0]]]}}
+]};
+const info=validateGeoJSON(simpleGeo);assert(info.features.length===3&&info.propertyKeys.includes('name'),'GeoJSON válido é reconhecido e seus atributos são listados');
+let geoRegions=normalizeGeoJSON(simpleGeo,{idProperty:'code',nameProperty:'name',populationProperty:'pop'},{defaultPopulation:500});
+const topo=buildGeoJSONTopology(geoRegions,{method:'shared_border'});geoRegions=topo.regions;
+assert(geoRegions.get('A').name==='Alpha'&&geoRegions.get('B').population===1200,'Importação usa campos escolhidos de ID, nome e população');
+assert(geoRegions.get('A').neighbors.includes('B')&&geoRegions.get('B').neighbors.includes('C')&&!geoRegions.get('A').neighbors.includes('C'),'Fronteiras compartilhadas criam adjacência correta no mapa importado');
+const mapProp=empty();mapProp.origins=[{id:'o',regionId:'A',startTime:0,infectedCount:180,duration:1,enabled:true}];mapProp.vaccinationBarriers=[{id:'blk',regionId:'B',vaccinationCoverage:100,enabled:true}];
+const mapRun=runSIRVSimulation({spaceConfig:{mode:'geojson'},simulationConfig:{...sim,timeSteps:14,beta:.8,gamma:0,mobility:1,initialVaccinationPct:0,initialVaccinationVariationPct:0},regions:geoRegions,propagation:mapProp});
+assert(mapRun.history.every(f=>f.get('B').infected===0&&f.get('C').infected===0),'Bloqueio 100% também remove a passagem espacial em mapas');
+const geoRun={id:'geo-run',seed:1,space:{mode:'geojson'},history:mapRun.history,eventLog:mapRun.eventLog,edges:mapRun.edges,regions:[...mapRun.initialRegions.values()],summary:{arrivals:{A:0,B:null,C:null},regionPeaks:{A:{time:0,infected:180},B:{time:0,infected:0},C:{time:0,infected:0}}}};
+assert(regionsGeoJSON(geoRun)?.includes('FeatureCollection')&&regionsGeoJSON(geoRun).includes('Alpha'),'Execução geográfica exporta regions.geojson preservando nomes e geometrias');
 
 const html=fs.readFileSync(new URL('../index.html', import.meta.url),'utf8');
 const appSource=fs.readFileSync(new URL('../js/app.js', import.meta.url),'utf8');
 assert(html.includes('Condições iniciais geradas pela semente')&&html.includes('Vacinação média inicial'),'Interface explica a geração S/V pela semente');
 assert(html.includes('Suscetibilidade do caminho')&&html.includes('Vacinação do bloqueio'),'Interface expõe o efeito de caminho e bloqueio');
-assert(appSource.includes('addVaccinationBarrier')&&appSource.includes('addPathRegion'),'Ferramentas do grid usam propriedades regionais');
+assert(appSource.includes('addVaccinationBarrier')&&appSource.includes('addPathRegion'),'Ferramentas espaciais usam propriedades regionais');
+assert(html.includes('Mapa sintético')&&html.includes('Importar mapa real')&&appSource.includes('normalizeGeoJSON'),'Interface oferece Grid, mapa sintético e importação GeoJSON');
 
 console.log(`\nRESUMO: ${passed} passaram; ${failed} falharam.`);if(failed)process.exitCode=1;

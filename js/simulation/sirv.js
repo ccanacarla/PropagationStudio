@@ -4,12 +4,12 @@ import { buildInitialRegions } from './initial-conditions.js';
 import { applyScheduledEvents } from './events.js';
 import { stepStochasticSIRVWeighted } from './stochastic.js';
 
-export function runSIRVSimulation({ gridConfig, simulationConfig, regions, propagation }) {
-  if (!(regions instanceof Map) || regions.size===0) throw new Error('O grid não possui regiões.');
+export function runSIRVSimulation({ spaceConfig, gridConfig, simulationConfig, regions, propagation }) {
+  if (!(regions instanceof Map) || regions.size===0) throw new Error('O espaço não possui regiões.');
   const prng=new Mulberry32(Number(simulationConfig.seed)||1);
   const timeSteps=Math.max(1,Math.floor(Number(simulationConfig.timeSteps)||1));
   const initialized=buildInitialRegions(regions,simulationConfig,propagation);
-  const graph=buildWeightedEdges(gridConfig,initialized,propagation);
+  const graph=buildWeightedEdges(spaceConfig || { mode:'grid', grid:gridConfig },initialized,propagation);
   const eventLog=[];
   const base=new Map();
 

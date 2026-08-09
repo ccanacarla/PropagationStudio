@@ -13,7 +13,7 @@ export function createGrid(rows, columns, config = {}, prng = null) {
       const id = `R_${r}_${c}`;
       const population = randomizePop ? localPrng.nextInt(minPop, maxPop) : defaultPop;
       regionsMap.set(id, {
-        id, name: `Região ${r},${c}`, row: r, column: c, population,
+        id, name: `Região ${r},${c}`, row: r, column: c, spatialX: c, spatialY: r, displayCentroid: { x: c, y: r }, geometry: null, sourceProperties: {}, population,
         susceptible: population, infected: 0, recovered: 0, vaccinated: 0, initialConditionMode: 'seeded',
         localParameters: { betaMultiplier: 1, gammaMultiplier: 1, vaccinationMultiplier: 1, mobilityMultiplier: 1, susceptibilityMultiplier: 1 }
       });

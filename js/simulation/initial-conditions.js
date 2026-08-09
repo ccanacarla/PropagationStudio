@@ -71,7 +71,14 @@ export function buildInitialRegions(regions, simulationConfig = {}, propagation 
     const barrierPct = barrierMap.get(id);
     if (barrierPct != null) {
       coveragePct = Math.max(coveragePct, barrierPct);
-      vaccinated = Math.max(vaccinated, Math.min(available, Math.round(population * barrierPct / 100)));
+      if (barrierPct >= 100) {
+        infected = 0;
+        recovered = 0;
+        vaccinated = population;
+      } else {
+        const nowAvailable = Math.max(0, population - infected - recovered);
+        vaccinated = Math.max(vaccinated, Math.min(nowAvailable, Math.round(population * barrierPct / 100)));
+      }
     }
 
     const susceptible = Math.max(0, population - infected - recovered - vaccinated);

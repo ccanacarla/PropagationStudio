@@ -1,95 +1,79 @@
-# Propagation Studio 4.2
+# Propagation Studio 4.4.0
 
-Aplicação web estática para construção, simulação, análise e exportação de eventos sintéticos de propagação SIRV em grid.
+Aplicação web estática para construir, simular, revisar e exportar eventos SIRV estocásticos. Funciona em GitHub Pages e não exige backend.
 
-## Conceitos principais
+## Modos espaciais
 
-A versão 4.2 usa propriedades regionais para construir o cenário:
+A aplicação usa um único motor SIRV para três representações:
 
-- a **semente do experimento** gera um padrão espacial reproduzível de suscetíveis e vacinados;
-- **Caminho** marca regiões com suscetibilidade relativa maior, facilitando a propagação por elas;
-- **Bloqueio** aumenta a vacinação inicial das regiões marcadas; com 100% de vacinação, a região fica com `S = 0` e funciona como bloqueio total;
-- origens, focos, saltos e direção podem ser combinados livremente.
+1. **Grid** — grade regular com vizinhança Moore (8) ou Von Neumann (4).
+2. **Mapa sintético** — regiões poligonais de Voronoi geradas por uma seed espacial.
+3. **Mapa importado** — GeoJSON `FeatureCollection` contendo `Polygon` ou `MultiPolygon`.
 
-## Condições iniciais e semente
+No mapa importado, o usuário escolhe quais atributos representam ID, nome e população. Se não houver população, um valor padrão é aplicado.
 
-Por padrão, cada região recebe uma cobertura vacinal inicial derivada da mesma semente usada no experimento.
+### Conectividade de mapas
 
-Configure:
+- **Fronteira compartilhada**: regiões são conectadas quando compartilham trecho de fronteira.
+- **Vizinhos mais próximos**: alternativa para arquivos cujas fronteiras não coincidem numericamente.
 
-- vacinação média inicial (%);
-- variação regional em pontos percentuais;
-- semente do experimento.
+A construção por fronteira pode ficar lenta em mapas muito grandes ou extremamente detalhados.
 
-A mesma semente e a mesma configuração recriam exatamente o mesmo padrão regional de `S` e `V`. Alterar a semente gera outro padrão.
+## Seeds
 
-Cada região deriva um sub-seed próprio. Assim, tornar uma região manual não desloca a sequência aleatória das demais.
+- **Seed espacial**: usada somente no mapa sintético para reproduzir a geometria.
+- **Seed do experimento**: reproduz condições iniciais S/V e a dinâmica estocástica.
 
-Uma região pode ser marcada como **manual** no painel Região. Nesse modo, seus valores de S/V não são regenerados ao trocar a semente.
+## Ferramentas
 
-## Caminho
+As mesmas ferramentas funcionam nos três espaços:
 
-A ferramenta **Caminho** marca uma sequência de regiões adjacentes.
+- origens;
+- focos;
+- saltos;
+- caminhos de maior suscetibilidade;
+- bloqueios vacinais;
+- anisotropia direcional;
+- edição individual de regiões.
 
-Cada região marcada recebe um `susceptibilityMultiplier`. A força de infecção recebida por ela é multiplicada por esse valor. Exemplo:
+### Bloqueio vacinal
 
-- `1.0` = suscetibilidade normal;
-- `2.5` = força de infecção 2,5 vezes maior;
-- `4.0` = força de infecção 4 vezes maior.
+Um bloqueio de `100%` faz a região iniciar com toda a população em `V`, zera `S/I/R` e remove suas arestas da transmissão espacial normal. A capacidade bloqueada não é redistribuída para outros vizinhos. Saltos continuam sendo eventos externos explícitos e não dependem da continuidade espacial.
 
-O caminho não cria infectados artificialmente e não altera a conservação populacional.
+O botão **Verificar isolamento pelas barreiras** calcula quais regiões deixaram de ser alcançáveis pelas origens através da transmissão espacial normal.
 
-## Bloqueio
+## Importação GeoJSON
 
-A ferramenta **Bloqueio** agora atua sobre a região, não sobre uma aresta.
+1. Abra **Espaço**.
+2. Escolha **Importar mapa**.
+3. Selecione um `.geojson` ou `.json`.
+4. Escolha os campos de ID, nome e população.
+5. Escolha o método de conectividade.
+6. Clique em **Usar este mapa**.
 
-Ela define a cobertura vacinal inicial mínima daquela região:
+O processamento ocorre localmente no navegador. Um arquivo de demonstração está em `examples/demo-regions.geojson`.
 
-- 50% = aproximadamente metade da população em `V`;
-- 80% = forte redução da população suscetível;
-- 100% = `V = população`, `S = 0` quando não há I/R iniciais, impedindo transmissão pela região.
+## Exportações
 
-Para formar uma parede, marque uma sequência de regiões com 100% de vacinação.
+Para cada execução:
 
-## Fluxo de uso
+- `simulation.json`
+- `temporal.csv`
+- `regions.csv`
+- `events.csv`
+- `edges.csv`
+- `summary.json`
+- `regions.geojson` quando o espaço possui geometria poligonal
 
-1. Configure grid, SIRV, vacinação inicial e semente.
-2. Monte o evento com origens, focos, saltos, caminho, bloqueio e direção.
-3. Clique em **Executar simulação**.
-4. Use a linha do tempo e **▶** para visualizar a animação.
-5. Revise análises, compare execuções e exporte os arquivos.
+O arquivo de projeto salva geometria, atributos importados, topologia, cenário e execuções para reabertura posterior.
 
-A animação representa uma execução já calculada e só fica disponível depois de simular.
-
-## Recursos
-
-- grid regular com 4 ou 8 vizinhos;
-- população uniforme ou aleatória;
-- heterogeneidade inicial S/V reproduzível pela seed;
-- edição manual de condições iniciais por região;
-- parâmetros SIRV globais e locais;
-- suscetibilidade local e caminho suscetível;
-- bloqueios por vacinação regional;
-- múltiplas origens e focos programados;
-- saltos probabilísticos e recorrentes;
-- propagação radial, estrita, em cone ou suave;
-- histórico de execuções;
-- animação temporal;
-- análises automáticas;
-- exportação JSON/CSV;
-- salvamento e importação do projeto.
-
-## Executar localmente
+## Execução local
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Abra `http://localhost:8000`.
-
-## GitHub Pages
-
-Publique o conteúdo da pasta na branch configurada para o GitHub Pages. Não há backend nem etapa obrigatória de build.
+Acesse `http://localhost:8000`.
 
 ## Testes
 
@@ -97,4 +81,4 @@ Publique o conteúdo da pasta na branch configurada para o GitHub Pages. Não h�
 npm test
 ```
 
-A suíte da versão 4.2 inclui testes para seed, S/V inicial, caminho suscetível, bloqueio vacinal, saltos, direção, conservação e exportações.
+A versão 4.4.0 inclui testes do grid, mapa sintético, GeoJSON, adjacência, bloqueio, seeds, eventos, análises e exportações.

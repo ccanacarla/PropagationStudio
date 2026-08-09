@@ -10,8 +10,12 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value)));
 export function directionalMultiplier(source, target, directionKey, options = {}) {
   const vector = DIRECTION_VECTORS[directionKey];
   if (!vector) return 1;
-  const dx = target.column - source.column;
-  const dy = target.row - source.row;
+  const sx = Number.isFinite(Number(source.spatialX)) ? Number(source.spatialX) : Number(source.column);
+  const sy = Number.isFinite(Number(source.spatialY)) ? Number(source.spatialY) : Number(source.row);
+  const tx = Number.isFinite(Number(target.spatialX)) ? Number(target.spatialX) : Number(target.column);
+  const ty = Number.isFinite(Number(target.spatialY)) ? Number(target.spatialY) : Number(target.row);
+  const dx = tx - sx;
+  const dy = ty - sy;
   const edgeLength = Math.hypot(dx, dy) || 1;
   const vectorLength = Math.hypot(vector.dx, vector.dy) || 1;
   const cosine = clamp((dx * vector.dx + dy * vector.dy) / (edgeLength * vectorLength), -1, 1);

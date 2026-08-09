@@ -1,3 +1,4 @@
+export const SPATIAL_MODES = { GRID:'grid', SYNTHETIC_MAP:'synthetic_map', GEOJSON:'geojson' };
 export const NEIGHBORHOOD_TYPES = { MOORE: 'moore', VON_NEUMANN: 'von_neumann' };
 export const BORDER_MODES = { NORMAL: 'normal', TOROIDAL: 'toroidal' };
 export const INTERACTION_MODES = {

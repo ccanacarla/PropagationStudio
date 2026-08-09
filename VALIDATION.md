@@ -1,46 +1,36 @@
-# Validação da versão 4.2.0
+# Validação — Propagation Studio 4.4.0
 
-## Testes automatizados
+## Automatizada
 
-Executados com `npm test`.
+`npm test`: 37 testes aprovados, 0 falhas.
 
-Resultado: **28 testes aprovados, 0 falhas**.
+Cobertura relevante:
 
-Cobertura principal:
-
-- heterogeneidade inicial de S/V;
-- reprodução exata de S/V com a mesma semente;
-- alteração do padrão espacial com semente diferente;
-- preservação de regiões em modo manual;
-- reprodutibilidade da dinâmica estocástica;
+- heterogeneidade S/V reproduzível por seed;
 - conservação populacional;
 - origens, focos e saltos;
-- bloqueio regional com 100% de vacinação;
-- bloqueio parcial por cobertura vacinal;
-- caminho com multiplicador de suscetibilidade;
-- aumento mensurável da propagação na região de caminho;
-- propagação direcional estrita;
-- análises automáticas;
-- serialização e exportações CSV/JSON;
-- presença dos novos controles na interface.
+- bloqueio vacinal parcial e total;
+- bloqueio total impedindo travessia espacial;
+- caminhos de maior suscetibilidade;
+- anisotropia direcional;
+- mapa sintético reproduzível por seed espacial;
+- validação e normalização de GeoJSON;
+- seleção de ID/nome/população;
+- adjacência por fronteira compartilhada;
+- bloqueio total em mapas;
+- exportação GeoJSON.
 
-## Semântica da seed
+## Verificações estáticas
 
-A seed do experimento controla tanto a dinâmica estocástica quanto o padrão inicial regional de vacinação/suscetibilidade. A geração inicial usa sub-seeds determinísticos por região, derivados da seed principal.
+- todos os módulos JavaScript passam em `node --check`;
+- nenhum seletor `#id` usado por `app.js` aponta para elemento ausente;
+- nenhum import local quebrado;
+- IDs HTML sem duplicação.
 
-## Semântica do caminho
+## Limitações conhecidas
 
-Uma região marcada como caminho recebe `pathSusceptibilityMultiplier`. A probabilidade de infecção usa a força local + importada multiplicada pela suscetibilidade efetiva da região.
-
-## Semântica do bloqueio
-
-Uma região bloqueada recebe uma cobertura vacinal inicial mínima. Com 100% e sem I/R iniciais, `V = N` e `S = 0`. Como eventos externos só convertem indivíduos suscetíveis em infectados, uma região totalmente vacinada também não recebe injeções de origem/foco/salto enquanto não houver suscetíveis.
-
-## Validação estática
-
-- módulos JavaScript passam em `node --check`;
-- imports locais foram verificados;
-- IDs HTML usados pela aplicação foram conferidos;
-- a suíte principal executa sem dependências externas.
-
-A validação interativa automatizada em Chromium não pôde ser executada neste ambiente por uma restrição administrativa de navegação local do navegador. O motor, a serialização e a estrutura da interface foram validados por testes automatizados e inspeção estática.
+- a adjacência por fronteira faz comparações geométricas no navegador e pode ficar lenta com centenas de polígonos muito detalhados;
+- GeoJSON com `Point`, `LineString` e `GeometryCollection` não é aceito nesta versão;
+- GeoJSON com fronteiras numericamente incompatíveis pode produzir regiões isoladas; nesses casos use **Vizinhos mais próximos**;
+- a visualização usa projeção cartesiana simples do bounding box e não substitui um GIS para análise cartográfica de precisão;
+- a tentativa de automação visual por Chromium headless não concluiu neste ambiente por restrições do processo do navegador; a validação visual final deve ser feita em um navegador local.
