@@ -43,7 +43,7 @@
             <button class="comp-tab" data-comp="recovered">R · Recuperados</button>
             <button class="comp-tab" data-comp="vaccinated">V · Vacinados</button>
           </div>
-          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main">▶ Executar simulação</button><span id="grid-dim-label" class="subtle-label">Grid · 10 × 10</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-zoom-in" class="icon-button">+</button><button id="btn-fit-grid" class="text-button">Ajustar</button></div>
+          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main">▶ Executar simulação</button><label class="clean-view-toggle" title="Oculta marcações e rótulos para deixar a animação mais limpa"><input id="clean-view-toggle" type="checkbox"><span>Visualização limpa</span></label><span id="grid-dim-label" class="subtle-label">Grid · 10 × 10</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-zoom-in" class="icon-button">+</button><button id="btn-fit-grid" class="text-button">Ajustar</button></div>
         </div>
         <div id="active-mode-bar" class="active-mode-bar"><span class="mode-dot"></span><strong id="mode-title">Selecionar</strong><span id="mode-help">Clique em uma região para inspecionar.</span><button id="btn-cancel-mode" class="text-button danger" hidden>Cancelar</button></div>
         <div class="canvas-stage" id="canvas-stage"><canvas id="grid-canvas" aria-label="Espaço espacial interativo"></canvas></div>
