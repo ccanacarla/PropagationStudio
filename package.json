@@ -6,5 +6,8 @@
   "scripts": {
     "test": "node tests/core-tests.js",
     "serve": "python3 -m http.server 8000"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
   }
 }
