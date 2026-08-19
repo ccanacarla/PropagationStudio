@@ -255,6 +255,10 @@ h1, h2, h3, p {
     gap: 8px
 }
 
+#selected-run-actions .button-row {
+    margin-top: 6px
+}
+
 .download-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -391,6 +395,36 @@ summary {
     margin: 0
 }
 
+.run-name {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #0f172a;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: text;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.run-name-input {
+    min-width: 0;
+    width: 100%;
+    padding: 3px 5px;
+    font-size: 11px;
+    font-weight: 700
+}
+
+.run-card-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0
+}
+
 .event-card .mini-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -422,6 +456,22 @@ summary {
 .run-card.selected {
     border-color: #60a5fa;
     box-shadow: 0 0 0 2px #dbeafe
+}
+
+.run-delete {
+    width: 24px;
+    height: 24px;
+    border-color: #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1
+}
+
+.run-delete:hover {
+    border-color: #fca5a5;
+    background: #ffe4e6
 }
 
 .run-meta {

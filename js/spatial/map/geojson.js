@@ -1,3 +1,4 @@
+import { SPATIAL_DEFAULTS } from '../../constants.js';
 import { geometryBBox, geometryCentroid, geometryPolygons } from './geometry.js';
 import { buildSharedBorderAdjacency, buildNearestAdjacency, applyAdjacencyToRegions, adjacencyStats } from './adjacency.js';
 
@@ -19,7 +20,7 @@ export function inferGeoJSONFields(propertyKeys=[]){return{
 function safeId(value,index,used){let base=String(value??'').trim().replace(/\s+/g,'_').replace(/[^\p{L}\p{N}_-]/gu,'');if(!base)base=`GEO_${String(index+1).padStart(4,'0')}`;let id=base,n=2;while(used.has(id))id=`${base}_${n++}`;used.add(id);return id;}
 
 export function normalizeGeoJSON(data,mapping={},options={}){
-  const {features}=validateGeoJSON(data),used=new Set(),regions=new Map(),fallbackPop=Math.max(1,Math.round(Number(options.defaultPopulation)||1000));
+  const {features}=validateGeoJSON(data),used=new Set(),regions=new Map(),fallbackPop=Math.max(1,Math.round(Number(options.defaultPopulation)||SPATIAL_DEFAULTS.DEFAULT_POPULATION));
   features.forEach((f,i)=>{const props=f.properties||{},id=safeId(mapping.idProperty?props[mapping.idProperty]:f.id,i,used),name=String(mapping.nameProperty?props[mapping.nameProperty]:(props.name??props.nome??id)),rawPop=mapping.populationProperty?Number(props[mapping.populationProperty]):NaN,population=Number.isFinite(rawPop)&&rawPop>0?Math.round(rawPop):fallbackPop,c=geometryCentroid(f.geometry),bbox=geometryBBox(f.geometry);regions.set(id,{id,name,population,susceptible:population,infected:0,recovered:0,vaccinated:0,geometry:structuredClone(f.geometry),bbox,spatialX:c.x,spatialY:-c.y,displayCentroid:{x:c.x,y:c.y},sourceProperties:structuredClone(props),initialConditionMode:'seeded',localParameters:{betaMultiplier:1,gammaMultiplier:1,vaccinationMultiplier:1,mobilityMultiplier:1,susceptibilityMultiplier:1}});});
   return regions;
 }

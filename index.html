@@ -43,7 +43,7 @@
             <button class="comp-tab" data-comp="recovered">R · Recuperados</button>
             <button class="comp-tab" data-comp="vaccinated">V · Vacinados</button>
           </div>
-          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main">▶ Executar simulação</button><label class="clean-view-toggle" title="Oculta marcações e rótulos para deixar a animação mais limpa"><input id="clean-view-toggle" type="checkbox"><span>Visualização limpa</span></label><span id="grid-dim-label" class="subtle-label">Grid · 10 × 10</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-zoom-in" class="icon-button">+</button><button id="btn-fit-grid" class="text-button">Ajustar</button></div>
+          <div class="canvas-actions"><button id="btn-simulate-main" class="btn primary simulate-main">▶ Executar simulação</button><label class="clean-view-toggle" title="Oculta marcações e rótulos para deixar a animação mais limpa"><input id="clean-view-toggle" type="checkbox"><span>Visualização limpa</span></label><span id="grid-dim-label" class="subtle-label">Grid</span><button id="btn-zoom-out" class="icon-button">−</button><span id="zoom-label" class="subtle-label">100%</span><button id="btn-zoom-in" class="icon-button">+</button><button id="btn-fit-grid" class="text-button">Ajustar</button></div>
         </div>
         <div id="active-mode-bar" class="active-mode-bar"><span class="mode-dot"></span><strong id="mode-title">Selecionar</strong><span id="mode-help">Clique em uma região para inspecionar.</span><button id="btn-cancel-mode" class="text-button danger" hidden>Cancelar</button></div>
         <div class="canvas-stage" id="canvas-stage"><canvas id="grid-canvas" aria-label="Espaço espacial interativo"></canvas></div>
@@ -85,7 +85,7 @@
 
           <div id="grid-space-fields" class="space-config-block">
             <h3>Configuração do grid</h3>
-            <div class="form-grid two"><label>Linhas<input id="grid-rows" type="number" min="2" max="80"></label><label>Colunas<input id="grid-cols" type="number" min="2" max="80"></label></div>
+            <div class="form-grid two"><label>Linhas<input id="grid-rows" type="number"></label><label>Colunas<input id="grid-cols" type="number"></label></div>
             <div class="form-grid"><label>Vizinhança<select id="grid-neighborhood"><option value="moore">8 vizinhos (Moore)</option><option value="von_neumann">4 vizinhos</option></select></label><label>Bordas<select id="grid-border"><option value="normal">Normais</option><option value="toroidal">Toroidais</option></select></label></div>
             <label class="check-row"><input id="grid-random-pop" type="checkbox"> População aleatória por região</label>
             <div id="uniform-pop-fields"><label>População por região<input id="grid-pop" type="number" min="1"></label></div>
@@ -96,7 +96,7 @@
           <div id="synthetic-space-fields" class="space-config-block" hidden>
             <h3>Mapa sintético</h3>
             <p class="hint">Gera células de Voronoi contíguas. A seed espacial controla apenas a geometria; a seed do experimento continua controlando S/V e a propagação.</p>
-            <div class="form-grid two"><label>Número de regiões<input id="synthetic-count" type="number" min="4" max="120" value="30"></label><label>Seed espacial<input id="synthetic-seed" type="number" value="4321"></label><label>Irregularidade (0–1)<input id="synthetic-irregularity" type="number" min="0" max="1" step="0.05" value="0.85"></label><label>População por região<input id="synthetic-pop" type="number" min="1" value="1000"></label></div>
+            <div class="form-grid two"><label>Número de regiões<input id="synthetic-count" type="number"></label><label>Seed espacial<input id="synthetic-seed" type="number"></label><label>Irregularidade (0–1)<input id="synthetic-irregularity" type="number" step="0.05"></label><label>População por região<input id="synthetic-pop" type="number"></label></div>
             <button id="btn-build-synthetic" class="btn primary wide">Gerar mapa sintético</button>
           </div>
 
@@ -107,7 +107,7 @@
             <input id="geojson-file" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
             <div id="geojson-import-config" hidden>
               <div id="geojson-summary" class="seed-summary"></div>
-              <div class="form-grid"><label>Campo de ID<select id="geojson-id-prop"></select></label><label>Campo de nome<select id="geojson-name-prop"></select></label><label>Campo de população<select id="geojson-pop-prop"></select></label><label>População padrão quando ausente<input id="geojson-default-pop" type="number" min="1" value="1000"></label></div>
+              <div class="form-grid"><label>Campo de ID<select id="geojson-id-prop"></select></label><label>Campo de nome<select id="geojson-name-prop"></select></label><label>Campo de população<select id="geojson-pop-prop"></select></label><label>População padrão quando ausente<input id="geojson-default-pop" type="number"></label></div>
               <details open><summary>Conectividade do mapa</summary><label>Método<select id="map-adjacency-method"><option value="shared_border">Fronteira compartilhada</option><option value="nearest">Vizinhos mais próximos</option></select></label><div id="map-shared-options"><label>Tolerância geométrica <input id="map-border-tolerance" type="number" min="0" step="any" placeholder="Automática"></label></div><div id="map-nearest-options" hidden><label>Vizinhos por região<input id="map-nearest-k" type="number" min="1" max="12" value="4"></label></div></details>
               <button id="btn-apply-geojson" class="btn primary wide">Usar este mapa</button>
             </div>

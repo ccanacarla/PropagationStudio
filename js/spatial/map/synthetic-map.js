@@ -1,4 +1,5 @@
 import { Mulberry32 } from '../../simulation/random.js';
+import { SPATIAL_DEFAULTS, SYNTHETIC_MAP_DEFAULTS } from '../../constants.js';
 import { geometryCentroid } from './geometry.js';
 import { buildSharedBorderAdjacency, applyAdjacencyToRegions } from './adjacency.js';
 
@@ -24,7 +25,7 @@ function seededPoints(count,seed,irregularity=0.8){
 }
 
 export function createSyntheticMap(config={}){
-  const count=Math.max(4,Math.min(120,Math.floor(Number(config.regionCount)||30))),seed=Number(config.spatialSeed)||4321,irregularity=Math.max(0,Math.min(1,Number(config.irregularity??0.85))),population=Math.max(1,Math.round(Number(config.defaultPopulation)||1000));
+  const count=Math.max(SYNTHETIC_MAP_DEFAULTS.MIN_REGIONS,Math.min(SYNTHETIC_MAP_DEFAULTS.MAX_REGIONS,Math.floor(Number(config.regionCount)||SYNTHETIC_MAP_DEFAULTS.REGION_COUNT))),seed=Number(config.spatialSeed)||SYNTHETIC_MAP_DEFAULTS.SPATIAL_SEED,irregularity=Math.max(0,Math.min(1,Number(config.irregularity??SYNTHETIC_MAP_DEFAULTS.IRREGULARITY))),population=Math.max(1,Math.round(Number(config.defaultPopulation)||SPATIAL_DEFAULTS.DEFAULT_POPULATION));
   const points=seededPoints(count,seed,irregularity),regions=new Map();
   points.forEach((p,i)=>{const ring=voronoiCell(p,points),geometry={type:'Polygon',coordinates:[ring]},c=geometryCentroid(geometry),id=`M_${String(i+1).padStart(3,'0')}`;regions.set(id,{id,name:`Região ${i+1}`,population,susceptible:population,infected:0,recovered:0,vaccinated:0,geometry,spatialX:c.x,spatialY:c.y,sourceProperties:{},initialConditionMode:'seeded',localParameters:{betaMultiplier:1,gammaMultiplier:1,vaccinationMultiplier:1,mobilityMultiplier:1,susceptibilityMultiplier:1}});});
   const {adjacency}=buildSharedBorderAdjacency(regions,1e-8);return applyAdjacencyToRegions(regions,adjacency);
