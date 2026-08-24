@@ -303,8 +303,12 @@
             <div id="run-warning" class="inline-message warning" hidden>O cenário mudou após esta execução. A simulação
               selecionada continua disponível, mas não representa a configuração atual.</div>
             <div id="runs-list" class="runs-list"></div>
-            <div id="selected-run-actions" hidden><label>Notas da execução<textarea id="run-notes"
-                  rows="3"></textarea></label>
+            <div id="selected-run-actions" hidden>
+              <details class="run-config-details" open>
+                <summary>Configuração desta execução</summary>
+                <div id="run-config-summary" class="run-config-summary"></div>
+              </details>
+              <label>Notas da execução<textarea id="run-notes" rows="3"></textarea></label>
               <div class="button-row"><button id="btn-approve-run" class="btn success">Aprovar</button><button
                   id="btn-reject-run" class="btn danger">Rejeitar</button></div>
               <hr>
@@ -329,7 +333,7 @@
     </main>
     <div id="toast-container" aria-live="polite"></div>
   </div>
-  <script src="./node_modules/jszip/dist/jszip.min.js"></script>
+  <script src="./js/vendor/jszip.min.js"></script>
   <script type="module" src="./js/app.js"></script>
 </body>
 

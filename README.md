@@ -53,9 +53,12 @@ O botão **Verificar isolamento pelas barreiras** calcula quais regiões deixara
 
 O processamento ocorre localmente no navegador. Um arquivo de demonstração está em `examples/demo-regions.geojson`.
 
-## Exportações
+## Execuções e exportações
 
-Para cada execução:
+Cada execução pode ser selecionada, renomeada, aprovada/rejeitada e excluída. Ao selecionar uma execução, o painel mostra a configuração registrada naquele run (espaço, seed, parâmetros SIRV e estruturas de propagação), inclusive depois de reabrir um projeto salvo.
+Ao clicar em uma execução, o Canvas entra no snapshot daquela execução: usa o espaço, grid/mapa, regiões, estruturas de propagação e histórico salvos no próprio run. Assim, projetos compartilhados podem ser reabertos e cada exemplo reproduzido com Play/Passo exatamente sobre a configuração em que foi gerado.
+
+O botão **Download (.zip)** gera um pacote com:
 
 - `simulation.json`
 - `temporal.csv`
@@ -65,7 +68,7 @@ Para cada execução:
 - `summary.json`
 - `regions.geojson` quando o espaço possui geometria poligonal
 
-O arquivo de projeto salva geometria, atributos importados, topologia, cenário e execuções para reabertura posterior.
+O arquivo de projeto salva geometria, atributos importados, topologia, cenário, execuções, execução selecionada e instante atual para reabertura posterior.
 
 ## Execução local
 

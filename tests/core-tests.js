@@ -1,11 +1,13 @@
 import fs from 'node:fs';
+import JSZip from 'jszip';
 import { createGrid } from '../js/spatial/grid.js';
 import { runSIRVSimulation } from '../js/simulation/sirv.js';
 import { buildWeightedEdges } from '../js/spatial/edges.js';
 import { buildInitialRegions } from '../js/simulation/initial-conditions.js';
 import { analyzeRun } from '../js/analytics/summary.js';
-import { projectJSON, temporalCSV, eventsCSV, edgesCSV, regionsCSV, regionsGeoJSON, serializeRun, deserializeRun } from '../js/export/files.js';
+import { projectJSON, runJSON, temporalCSV, eventsCSV, edgesCSV, regionsCSV, regionsGeoJSON, serializeRun, deserializeRun, deserializeRuns } from '../js/export/files.js';
 import { createSyntheticMap } from '../js/spatial/map/synthetic-map.js';
+import { AppState } from '../js/state.js';
 import { validateGeoJSON, normalizeGeoJSON, buildGeoJSONTopology } from '../js/spatial/map/geojson.js';
 
 let passed=0,failed=0;
@@ -87,9 +89,24 @@ const mockRun={id:'run-test',seed:sim.seed,history:rs.history,eventLog:rs.eventL
 assert(mockRun.summary.reachedRegions>1&&mockRun.summary.peakRegion.regionId,'Análises automáticas calculam cobertura e pico regional');
 assert(mockRun.summary.observedDirection.direction==='east','Análise automática reconhece direção observada leste');
 
-const serialized=serializeRun(mockRun),restored=deserializeRun(serialized);assert(restored.history[0] instanceof Map&&restored.history.length===mockRun.history.length,'Execuções podem ser serializadas e reabertas');
-const mockState={project:{name:'Teste',schemaVersion:'4.4.0'},space:{mode:'grid',synthetic:{},geojson:{}},grid,simulationConfig:sim,propagation:strict,regions:initA,analysisOptions:{arrivalThreshold:2,referenceRegionId:null},dirty:false,runs:[mockRun]};const pj=projectJSON(mockState,true);
+const namedMockRun={...mockRun,name:'Execução A',simulationConfig:{...sim},grid:{...grid},space:{mode:'grid'},propagation:strict,status:'approved',notes:'nota'};
+const serialized=serializeRun(namedMockRun),restored=deserializeRun(serialized);assert(restored.history[0] instanceof Map&&restored.history.length===mockRun.history.length,'Execuções podem ser serializadas e reabertas');
+assert(restored.name==='Execução A'&&restored.simulationConfig.beta===sim.beta&&restored.status==='approved'&&restored.notes==='nota','Nome, configuração e metadados da execução sobrevivem ao salvamento/importação');
+const legacyFrameObject={id:'legacy-object',history:[Object.fromEntries([...rs.history[0].entries()].slice(0,3))],regions:mockRun.regions};
+const restoredLegacyObject=deserializeRun(legacyFrameObject,{simulationConfig:sim,grid,space:{mode:'grid'},propagation:strict});
+assert(restoredLegacyObject.history[0] instanceof Map&&restoredLegacyObject.history[0].size===3,'Importação aceita frames legados salvos como objeto por região');
+const legacyPairEntries={id:'legacy-pairs',history:[[...rs.history[0].entries()].slice(0,2)],regions:mockRun.regions};
+const restoredLegacyPairs=deserializeRun(legacyPairEntries,{simulationConfig:sim,grid,space:{mode:'grid'},propagation:strict});
+assert(restoredLegacyPairs.history[0] instanceof Map&&restoredLegacyPairs.history[0].size===2,'Importação aceita frames legados salvos como pares [região, estado]');
+const restoredCollection=deserializeRuns([{...serialized,id:'dup'},{...serialized,id:'dup',name:'Segunda'}],{simulationConfig:sim,grid,space:{mode:'grid'},propagation:strict});
+assert(restoredCollection.runs.length===2&&restoredCollection.runs[0].id!==restoredCollection.runs[1].id,'Importação resolve IDs duplicados de execuções sem quebrar a seleção');
+const runState=new AppState();runState.runs=[{id:'a',history:[new Map()]},{id:'b',history:[new Map()]}];runState.selectedRunId='a';runState.currentTimeStep=7;runState.isPlaying=true;runState.removeRun('a');
+assert(runState.selectedRunId==='b'&&runState.currentTimeStep===0&&!runState.isPlaying,'Excluir a execução selecionada escolhe outra execução e reinicia a reprodução com segurança');
+const zipCheck=new JSZip();zipCheck.file('simulation.json',runJSON(restored));zipCheck.file('temporal.csv',temporalCSV(restored));const zipBuffer=await zipCheck.generateAsync({type:'nodebuffer',compression:'DEFLATE'});
+assert(zipBuffer.length>100,'Execução restaurada pode ser compactada em ZIP após a importação');
+const mockState={project:{name:'Teste',schemaVersion:'4.4.0'},space:{mode:'grid',synthetic:{},geojson:{}},grid,simulationConfig:sim,propagation:strict,regions:initA,analysisOptions:{arrivalThreshold:2,referenceRegionId:null},dirty:false,runs:[namedMockRun],selectedRunId:'run-test',currentTimeStep:3};const pj=projectJSON(mockState,true);
 assert(pj.includes('\"schemaVersion\": \"4.4.0\"')&&pj.includes('initialVaccinationPct')&&!pj.includes('groundTruth'),'Projeto 4.4 salva espaço, seed e condições iniciais sem atividades');
+assert(pj.includes('\"selectedRunId\": \"run-test\"')&&pj.includes('\"currentTimeStep\": 3')&&pj.includes('\"name\": \"Execução A\"'),'Projeto preserva seleção, instante e nome das execuções ao salvar');
 assert(temporalCSV(mockRun).includes('path_susceptibility_multiplier')&&eventsCSV(mockRun).includes('origin_injected'),'Exportação temporal inclui modificadores regionais e eventos reais');
 assert(edgesCSV(mockRun).includes('effectiveWeight')&&regionsCSV(mockRun).includes('initial_vaccinated_pct'),'Exportações de arestas e regiões incluem condições iniciais');
 
@@ -124,5 +141,20 @@ assert(html.includes('Condições iniciais geradas pela semente')&&html.includes
 assert(html.includes('Suscetibilidade do caminho')&&html.includes('Vacinação do bloqueio'),'Interface expõe o efeito de caminho e bloqueio');
 assert(appSource.includes('addVaccinationBarrier')&&appSource.includes('addPathRegion'),'Ferramentas espaciais usam propriedades regionais');
 assert(html.includes('Mapa sintético')&&html.includes('Importar mapa real')&&appSource.includes('normalizeGeoJSON'),'Interface oferece Grid, mapa sintético e importação GeoJSON');
+const referencedIds=[...appSource.matchAll(/\$\('#([^']+)'\)/g)].map(m=>m[1]);const missingIds=[...new Set(referencedIds)].filter(id=>!html.includes(`id=\"${id}\"`));
+assert(missingIds.length===0,`Todos os IDs acessados diretamente pelo app existem no HTML${missingIds.length?`: ${missingIds.join(', ')}`:''}`);
+assert(html.includes('Configuração desta execução')&&appSource.includes('renderRunConfiguration'),'Execução selecionada mostra a configuração salva no próprio run');
+assert(html.includes('./js/vendor/jszip.min.js')&&!html.includes('./node_modules/jszip/dist/jszip.min.js'),'Download ZIP usa biblioteca vendorizada e portátil para GitHub Pages');
+
+const playbackState=new AppState();
+playbackState.runs=[{id:'run-a',name:'Exemplo A',history:[new Map(),new Map()],space:{mode:'grid'},grid:{rows:2,columns:3},regions:[{id:'R_1_1'}],propagation:empty()}];
+playbackState.selectRun('run-a');
+assert(playbackState.selectedRunId==='run-a'&&playbackState.viewingRunId==='run-a'&&playbackState.viewRun()?.name==='Exemplo A','Clicar em uma execução ativa o snapshot completo para reprodução');
+playbackState.updateSimulation({beta:.5});
+assert(playbackState.selectedRunId==='run-a'&&playbackState.viewingRunId===null,'Editar o cenário atual sai da visualização da execução sem perder sua seleção');
+const rendererSource=fs.readFileSync(new URL('../js/visualization/grid-renderer.js', import.meta.url),'utf8');
+assert(rendererSource.includes('viewRun()')&&rendererSource.includes('viewGrid()')&&rendererSource.includes('viewPropagation()')&&rendererSource.includes('viewRegions()'),'Renderer usa espaço, grid, regiões e propagação do snapshot selecionado');
+const animationSource=fs.readFileSync(new URL('../js/visualization/animation.js', import.meta.url),'utf8');
+assert(animationSource.includes('ensureRunView')&&animationSource.includes('activateRunView'),'Play e navegação temporal reativam automaticamente o snapshot da execução selecionada');
 
 console.log(`\nRESUMO: ${passed} passaram; ${failed} falharam.`);if(failed)process.exitCode=1;

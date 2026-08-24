@@ -1,1 +1,10 @@
-export class AnimationController{constructor(state){this.state=state;this.timer=null;}play(){if(!this.state.currentRun()||this.state.isPlaying)return;this.state.isPlaying=true;this.state.notify('PLAYBACK');this.loop();}pause(){if(this.timer){clearTimeout(this.timer);this.timer=null;}this.state.isPlaying=false;this.state.notify('PLAYBACK');}toggle(){this.state.isPlaying?this.pause():this.play();}step(delta){this.pause();this.state.setTimeStep(this.state.currentTimeStep+delta);}reset(){this.pause();this.state.setTimeStep(0);}loop(){if(!this.state.isPlaying)return;const run=this.state.currentRun();if(!run||this.state.currentTimeStep>=run.history.length-1){this.pause();return;}this.state.setTimeStep(this.state.currentTimeStep+1);this.timer=setTimeout(()=>this.loop(),this.state.playbackSpeed||180);}}
+export class AnimationController {
+  constructor(state){this.state=state;this.timer=null;}
+  ensureRunView(){const run=this.state.currentRun();if(!run)return null;if(this.state.viewingRunId!==run.id)this.state.activateRunView(run.id);return run;}
+  play(){const run=this.ensureRunView();if(!run||this.state.isPlaying)return;this.state.isPlaying=true;this.state.notify('PLAYBACK');this.loop();}
+  pause(){if(this.timer){clearTimeout(this.timer);this.timer=null;}this.state.isPlaying=false;this.state.notify('PLAYBACK');}
+  toggle(){this.state.isPlaying?this.pause():this.play();}
+  step(delta){this.pause();if(!this.ensureRunView())return;this.state.setTimeStep(this.state.currentTimeStep+delta);}
+  reset(){this.pause();if(!this.ensureRunView())return;this.state.setTimeStep(0);}
+  loop(){if(!this.state.isPlaying)return;const run=this.state.currentRun();if(!run||this.state.currentTimeStep>=run.history.length-1){this.pause();return;}this.state.setTimeStep(this.state.currentTimeStep+1);this.timer=setTimeout(()=>this.loop(),this.state.playbackSpeed||180);}
+}

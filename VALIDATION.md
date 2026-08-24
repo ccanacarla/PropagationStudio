@@ -1,8 +1,8 @@
-# Validação — Propagation Studio 4.4.0
+# Validação — Propagation Studio 4.4.2
 
 ## Automatizada
 
-`npm test`: 37 testes aprovados, 0 falhas.
+`npm test`: 51 testes aprovados, 0 falhas.
 
 Cobertura relevante:
 
@@ -18,7 +18,18 @@ Cobertura relevante:
 - seleção de ID/nome/população;
 - adjacência por fronteira compartilhada;
 - bloqueio total em mapas;
-- exportação GeoJSON.
+- exportação GeoJSON;
+- serialização/desserialização de execuções com nome e configuração;
+- compatibilidade com históricos 4.x em arrays, pares e objetos por região;
+- resolução de IDs duplicados em execuções importadas;
+- exclusão segura da execução selecionada;
+- geração de ZIP a partir de uma execução restaurada;
+- consistência entre IDs referenciados em `app.js` e elementos presentes no HTML;
+- JSZip vendorizado para execução estática no GitHub Pages;
+- seleção de execução ativando o snapshot completo para reprodução;
+- retorno automático ao cenário atual quando ele é editado;
+- Play e navegação temporal reativando o snapshot selecionado;
+- renderer usando espaço, grid, regiões e propagação próprios de cada execução.
 
 ## Verificações estáticas
 
