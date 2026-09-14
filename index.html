@@ -21,6 +21,10 @@
           <p>Construa, simule e exporte eventos SIRV</p>
         </div>
       </div>
+      <nav class="app-workspace-switcher" aria-label="Modo de trabalho">
+        <button type="button" class="app-workspace-tab active" data-workspace-mode="build">Construir cenário</button>
+        <button type="button" id="btn-open-visualization" class="app-workspace-tab" data-workspace-mode="visualize" disabled>Visualizações</button>
+      </nav>
       <div class="project-actions">
         <input id="project-name" class="project-name" value="Novo cenário" aria-label="Nome do projeto">
         <span id="dirty-badge" class="status-pill warning">Alterações não simuladas</span>
@@ -67,8 +71,37 @@
           <div id="active-mode-bar" class="active-mode-bar"><span class="mode-dot"></span><strong
               id="mode-title">Selecionar</strong><span id="mode-help">Clique em uma região para
               inspecionar.</span><button id="btn-cancel-mode" class="text-button danger" hidden>Cancelar</button></div>
-          <div class="canvas-stage" id="canvas-stage"><canvas id="grid-canvas"
-              aria-label="Espaço espacial interativo"></canvas></div>
+          <div id="visualization-workspace-bar" class="visualization-workspace-bar" hidden>
+            <button type="button" id="btn-back-to-build" class="visualization-back-button" aria-label="Voltar ao cenário">← Cenário</button>
+            <label class="visualization-run-control">
+              <span>Execução</span>
+              <select id="visualization-run-select" aria-label="Execução visualizada"></select>
+            </label>
+            <div class="visualization-signal" aria-label="Variável e escala visualizadas">
+              <span>Variável</span><strong>Infectados (%)</strong>
+              <div class="visualization-fixed-legend" aria-label="Escala fixa de infectados de zero a cem por cento">
+                <span>0%</span><i></i><span>100%</span>
+              </div>
+            </div>
+            <div class="visualization-technique-group">
+              <span class="visualization-mode-label">Técnica</span>
+              <div class="visualization-mode-tabs" role="tablist" aria-label="Técnica de visualização">
+                <button type="button" class="visualization-mode-tab active" data-visualization-mode="animation" role="tab">Animação</button>
+                <button type="button" class="visualization-mode-tab" data-visualization-mode="small_multiples" role="tab">Small multiples</button>
+                <button type="button" class="visualization-mode-tab" data-visualization-mode="projection1d" role="tab">Projeção 1D</button>
+              </div>
+            </div>
+          </div>
+          <div class="canvas-stage" id="canvas-stage">
+            <canvas id="grid-canvas" aria-label="Espaço espacial interativo"></canvas>
+            <div id="technique-view" class="technique-view" hidden aria-live="polite"></div>
+            <aside id="visualization-inspector" class="visualization-inspector" hidden aria-live="polite">
+              <button type="button" id="btn-close-visualization-inspector" class="visualization-inspector-close" aria-label="Fechar detalhes da região">×</button>
+              <span class="visualization-inspector-kicker">Região selecionada</span>
+              <strong id="visualization-inspector-title">—</strong>
+              <div id="visualization-inspector-body"></div>
+            </aside>
+          </div>
           <div class="canvas-legend"><span><i class="legend origin"></i>Origem</span><span><i
                 class="legend focus"></i>Foco</span><span><i class="legend jump"></i>Salto</span><span><i
                 class="legend path"></i>Caminho · maior suscetibilidade</span><span><i

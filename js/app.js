@@ -9,6 +9,7 @@ import { analyzeRun } from './analytics/summary.js';
 import { SpatialRenderer } from './visualization/grid-renderer.js';
 import { SimulationCharts } from './visualization/charts.js';
 import { AnimationController } from './visualization/animation.js';
+import { ComparativeViewer } from './visualization/comparative-viewer.js';
 import { downloadBlob, downloadText, projectJSON, runJSON, temporalCSV, eventsCSV, edgesCSV, regionsCSV, regionsGeoJSON, deserializeRuns } from './export/files.js';
 
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -20,17 +21,59 @@ const MODE_INFO = { select: ['Selecionar', 'Clique em uma região para inspecion
 const migratePropagation = (input = {}) => { const base = defaultPropagation(), next = { ...base, ...input, direction: { ...base.direction, ...(input.direction || {}) }, pathSettings: { ...base.pathSettings, ...(input.pathSettings || {}) }, barrierSettings: { ...base.barrierSettings, ...(input.barrierSettings || {}) } }; for (const k of ['origins', 'focuses', 'jumps', 'vaccinationBarriers', 'pathRegions']) next[k] = Array.isArray(input[k]) ? input[k] : []; if (!next.vaccinationBarriers.length && Array.isArray(input.barriers)) { const seen = new Set(); for (const b of input.barriers) for (const regionId of [b.sourceRegionId, b.targetRegionId]) if (regionId && !seen.has(regionId)) { seen.add(regionId); next.vaccinationBarriers.push({ id: `migrated-barrier-${regionId}`, regionId, vaccinationCoverage: Math.round((1 - Math.max(0, Math.min(1, Number(b.multiplier ?? 0)))) * 100), enabled: b.enabled !== false }); } } if (!next.pathRegions.length && Array.isArray(input.preferredPaths)) { const map = new Map(); for (const p of input.preferredPaths) for (const regionId of [p.sourceRegionId, p.targetRegionId]) if (regionId) map.set(regionId, Math.max(map.get(regionId) || 1, Math.max(1, Number(p.multiplier ?? 2)))); next.pathRegions = [...map].map(([regionId, susceptibilityMultiplier], i) => ({ id: `migrated-path-${i + 1}`, regionId, susceptibilityMultiplier, enabled: true })); } return next; };
 
 class App {
-  constructor() { this.pendingSpaceMode = state.space.mode; this.pendingGeoJSON = null; this.pendingGeoJSONName = ''; this.renderer = new SpatialRenderer($('#grid-canvas'), state, id => this.handleSpatialClick(id), id => this.handleHover(id)); this.charts = new SimulationCharts($('#global-chart'), $('#region-chart')); this.animation = new AnimationController(state); this.cleanView = this.readCleanViewPreference(); this.populateDirections(); this.bind(); this.setCleanView(this.cleanView, false); this.syncControls(); this.renderAll(); state.subscribe((type, data) => this.onState(type, data)); }
+  constructor() {
+    this.pendingSpaceMode = state.space.mode;
+    this.pendingGeoJSON = null;
+    this.pendingGeoJSONName = '';
+    this.renderer = new SpatialRenderer($('#grid-canvas'), state, id => this.handleSpatialClick(id), id => this.handleHover(id));
+    this.charts = new SimulationCharts($('#global-chart'), $('#region-chart'));
+    this.animation = new AnimationController(state);
+    this.workspaceMode = 'build';
+    this.visualizationMode = 'animation';
+    this.visualizationInspectorRegionId = null;
+    this.visualizationInspectorTime = null;
+    this.comparativeViewer = new ComparativeViewer($('#technique-view'), state, {
+      onPlayPause: () => this.animation.toggle(),
+      onReset: firstTime => { this.animation.pause(); state.activateRunView(state.selectedRunId); state.setTimeStep(firstTime ?? 1); },
+      onTimeChange: time => { this.animation.pause(); state.activateRunView(state.selectedRunId); state.setTimeStep(time); },
+      onRegionClick: (id, time = null) => { state.setSelectedRegion(id); this.renderVisualizationInspector(id, time); }
+    });
+    this.cleanView = this.readCleanViewPreference();
+    this.populateDirections();
+    this.bind();
+    this.setCleanView(this.cleanView, false);
+    this.syncControls();
+    this.renderAll();
+    this.syncWorkspaceControls();
+    state.subscribe((type, data) => this.onState(type, data));
+  }
   populateDirections() { const sel = $('#direction-key'); sel.innerHTML = DIRECTION_OPTIONS.map(([v, l]) => `<option value="${v}">${l}</option>`).join(''); }
   bind() {
     $('#project-name').addEventListener('change', e => { state.project.name = e.target.value.trim() || 'Novo cenário'; state.touch('PROJECT_NAME'); });
-    $('#btn-new-project').addEventListener('click', () => { if (confirm('Criar um novo projeto? Salve o atual se quiser mantê-lo.')) { this.animation.pause(); state.newProject(); this.pendingSpaceMode = state.space.mode; this.pendingGeoJSON = null; this.syncControls(); this.renderAll(); this.renderer.resize(); this.toast('success', 'Novo projeto', 'Um cenário vazio foi criado.'); } });
+    $('#btn-new-project').addEventListener('click', () => { if (confirm('Criar um novo projeto? Salve o atual se quiser mantê-lo.')) { this.animation.pause(); this.workspaceMode = 'build'; state.newProject(); this.pendingSpaceMode = state.space.mode; this.pendingGeoJSON = null; this.syncControls(); this.renderAll(); this.renderer.resize(); this.toast('success', 'Novo projeto', 'Um cenário vazio foi criado.'); } });
     $('#btn-save-project').addEventListener('click', () => downloadText(`${this.safeName(state.project.name)}.json`, projectJSON(state, true), 'application/json;charset=utf-8'));
     $('#btn-import-project').addEventListener('click', () => $('#project-file').click()); $('#project-file').addEventListener('change', e => this.importProject(e.target.files?.[0]));
-    $$('.property-tab').forEach(b => b.addEventListener('click', () => state.setPanel(b.dataset.panel))); $$('.tool').forEach(b => b.addEventListener('click', () => state.setMode(b.dataset.mode))); $('#btn-cancel-mode').addEventListener('click', () => state.setMode(INTERACTION_MODES.SELECT));
+    $$('.property-tab').forEach(b => b.addEventListener('click', () => state.setPanel(b.dataset.panel)));
+    $$('.tool').forEach(b => b.addEventListener('click', () => { this.setWorkspaceMode('build'); state.setMode(b.dataset.mode); }));
+    $('#btn-cancel-mode').addEventListener('click', () => state.setMode(INTERACTION_MODES.SELECT));
+    $$('.app-workspace-tab').forEach(b => b.addEventListener('click', () => this.setWorkspaceMode(b.dataset.workspaceMode)));
+    $('#btn-back-to-build').addEventListener('click', () => this.setWorkspaceMode('build'));
+    $('#btn-close-visualization-inspector').addEventListener('click', () => this.hideVisualizationInspector());
+    $$('.visualization-mode-tab').forEach(b => b.addEventListener('click', () => this.setVisualizationMode(b.dataset.visualizationMode)));
+    $('#visualization-run-select').addEventListener('change', e => {
+      const id = e.target.value;
+      if (!id) return;
+      state.selectRun(id);
+      if (state.currentRun()?.history?.length > 1) state.setTimeStep(1);
+    });
     $$('.comp-tab').forEach(b => b.addEventListener('click', () => state.setCompartment(b.dataset.comp))); $('#clean-view-toggle').addEventListener('change', e => this.setCleanView(e.target.checked)); $('#btn-zoom-in').addEventListener('click', () => this.setZoom(this.renderer.setZoom(this.renderer.zoom + .2))); $('#btn-zoom-out').addEventListener('click', () => this.setZoom(this.renderer.setZoom(this.renderer.zoom - .2))); $('#btn-fit-grid').addEventListener('click', () => this.setZoom(this.renderer.fit()));
     $('#btn-toggle-bottom').addEventListener('click', () => { const p = $('#bottom-panel'); p.classList.toggle('collapsed'); $('#btn-toggle-bottom').textContent = p.classList.contains('collapsed') ? 'Expandir' : 'Recolher'; setTimeout(() => this.renderer.resize(), 0); }); $$('.bottom-tab').forEach(b => b.addEventListener('click', () => this.showBottomTab(b.dataset.bottom)));
-    $('#btn-reset').addEventListener('click', () => this.animation.reset()); $('#btn-step-back').addEventListener('click', () => this.animation.step(-1)); $('#btn-play-pause').addEventListener('click', () => this.animation.toggle()); $('#btn-step-forward').addEventListener('click', () => this.animation.step(1)); $('#time-slider').addEventListener('input', e => { this.animation.pause(); state.activateRunView(state.selectedRunId); state.setTimeStep(Number(e.target.value)); }); $('#playback-speed').addEventListener('input', e => { state.playbackSpeed = Number(e.target.value) || 180; });
+    $('#btn-reset').addEventListener('click', () => { if (this.workspaceMode === 'visualize' && state.currentRun()?.history?.length > 1) { this.animation.pause(); state.activateRunView(state.selectedRunId); state.setTimeStep(1); } else this.animation.reset(); });
+    $('#btn-step-back').addEventListener('click', () => { if (this.workspaceMode === 'visualize' && state.currentTimeStep <= 1) { this.animation.pause(); state.setTimeStep(state.currentRun()?.history?.length > 1 ? 1 : 0); } else this.animation.step(-1); });
+    $('#btn-play-pause').addEventListener('click', () => { if (this.workspaceMode === 'visualize' && this.visualizationMode !== 'animation') this.setVisualizationMode('animation'); this.animation.toggle(); });
+    $('#btn-step-forward').addEventListener('click', () => this.animation.step(1));
+    $('#time-slider').addEventListener('input', e => { this.animation.pause(); if (this.workspaceMode === 'visualize') state.activateRunView(state.selectedRunId); state.setTimeStep(Number(e.target.value)); });
+    $('#playback-speed').addEventListener('input', e => { state.playbackSpeed = Number(e.target.value) || 180; });
     $$('.space-mode-card').forEach(b => b.addEventListener('click', () => this.selectSpaceMode(b.dataset.spaceMode))); $('#grid-random-pop').addEventListener('change', () => this.togglePopulationFields()); $('#btn-apply-grid').addEventListener('click', () => this.applyGrid()); $('#btn-build-synthetic').addEventListener('click', () => this.buildSynthetic()); $('#btn-select-geojson').addEventListener('click', () => $('#geojson-file').click()); $('#geojson-file').addEventListener('change', e => this.readGeoJSON(e.target.files?.[0])); $('#map-adjacency-method').addEventListener('change', () => this.toggleAdjacencyOptions()); $('#btn-apply-geojson').addEventListener('click', () => this.applyGeoJSON());
     this.bindSimulationInputs(); this.bindDirectionInputs(); $('#path-susceptibility-default').addEventListener('change', e => state.updatePropagationSettings('path', { susceptibilityMultiplier: Math.max(1, Number(e.target.value) || 1) })); $('#barrier-vaccination-default').addEventListener('change', e => state.updatePropagationSettings('barrier', { vaccinationCoverage: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })); $('#btn-check-isolation').addEventListener('click', () => this.checkIsolation());
     $('#btn-save-region').addEventListener('click', () => this.saveRegion()); $('#scenario-lists').addEventListener('change', e => this.editScenarioItem(e)); $('#scenario-lists').addEventListener('click', e => { const b = e.target.closest('[data-remove-kind]'); if (b) state.removeEvent(b.dataset.removeKind, b.dataset.removeId); }); $('#btn-random-seed').addEventListener('click', () => { state.updateSimulation({ seed: Math.floor(Math.random() * 2147483646) + 1 }); this.syncSimulationControls(); });
@@ -39,19 +82,122 @@ class App {
       const card = e.target.closest('[data-run-id]');
       if (!card) return;
       const id = card.dataset.runId, action = e.target.closest('[data-run-action]')?.dataset.runAction;
+      if (e.target.closest('.run-menu') && !action) return;
       if (action === 'delete') { this.deleteRun(id); return; }
-      if (action === 'rename') { if (state.selectedRunId !== id) state.selectRun(id); this.renameRun(id, card); return; }
+      if (action === 'rename') { if (state.selectedRunId !== id) state.selectRun(id); if (this.workspaceMode === 'build') state.exitRunView(); this.renameRun(id, card); return; }
+      if (action === 'visualize') { if (state.selectedRunId !== id) state.selectRun(id); this.setWorkspaceMode('visualize', 'animation'); return; }
       state.selectRun(id);
+      if (this.workspaceMode === 'visualize') {
+        if (state.currentRun()?.history?.length > 1) state.setTimeStep(1);
+      } else state.exitRunView();
     });
     $('#runs-list').addEventListener('keydown', e => {
       if (!['Enter', ' '].includes(e.key) || e.target.closest('[data-run-action]')) return;
       const card = e.target.closest('[data-run-id]');
-      if (card) { e.preventDefault(); state.selectRun(card.dataset.runId); }
+      if (card) { e.preventDefault(); state.selectRun(card.dataset.runId); if (this.workspaceMode === 'visualize' && state.currentRun()?.history?.length > 1) state.setTimeStep(1); else if (this.workspaceMode === 'build') state.exitRunView(); }
     });
     $('#run-notes').addEventListener('change', e => { const run = state.currentRun(); if (run) state.updateRun(run.id, { notes: e.target.value }); }); $('#btn-approve-run').addEventListener('click', () => this.setRunStatus('approved')); $('#btn-reject-run').addEventListener('click', () => this.setRunStatus('rejected')); $('#btn-export-all').addEventListener('click', () => this.exportAllRunFiles()); $$('[data-export]').forEach(b => b.addEventListener('click', () => this.exportRun(b.dataset.export))); $('#analysis-threshold').addEventListener('change', () => this.refreshAnalysis()); $('#analysis-reference').addEventListener('change', () => this.refreshAnalysis());
   }
   readCleanViewPreference() { try { return localStorage.getItem('propagation-clean-view') === '1'; } catch { return false; } }
   setCleanView(enabled, persist = true) { this.cleanView = !!enabled; const toggle = $('#clean-view-toggle'); if (toggle) toggle.checked = this.cleanView; this.renderer.setAnnotationsVisible(!this.cleanView); const legend = $('.canvas-legend'); if (legend) legend.classList.toggle('is-hidden', this.cleanView); if (persist) { try { localStorage.setItem('propagation-clean-view', this.cleanView ? '1' : '0'); } catch {} } }
+  setWorkspaceMode(mode, technique = null) {
+    if (mode !== 'visualize') mode = 'build';
+    const run = state.currentRun();
+    if (mode === 'visualize' && !run) {
+      this.toast('warning', 'Sem execução', 'Execute ou selecione uma execução antes de abrir o modo de visualização.');
+      return false;
+    }
+    this.animation.pause();
+    this.workspaceMode = mode;
+    if (mode === 'visualize') {
+      if (technique) this.visualizationMode = technique;
+      if (!['animation', 'small_multiples', 'projection1d'].includes(this.visualizationMode)) this.visualizationMode = 'animation';
+      state.activateRunView(run.id);
+      if (run.history?.length > 1) state.setTimeStep(1);
+    } else {
+      this.hideVisualizationInspector();
+      state.exitRunView();
+    }
+    this.syncWorkspaceControls();
+    if (mode === 'build') setTimeout(() => this.renderer.resize(), 0);
+    else this.comparativeViewer.setMode(this.visualizationMode);
+    return true;
+  }
+  setVisualizationMode(mode) {
+    if (!['animation', 'small_multiples', 'projection1d'].includes(mode)) mode = 'animation';
+    const run = state.currentRun();
+    if (!run) { this.toast('warning', 'Sem execução', 'Execute ou selecione uma execução antes de abrir esta técnica.'); return; }
+    this.visualizationMode = mode;
+    if (this.workspaceMode !== 'visualize') {
+      this.setWorkspaceMode('visualize', mode);
+      return;
+    }
+    this.animation.pause();
+    const previousTime = state.currentTimeStep;
+    if (state.viewRun?.()?.id !== run.id) {
+      state.activateRunView(run.id);
+      if (run.history?.length > 1) state.setTimeStep(Math.max(1, Math.min(previousTime || 1, run.history.length - 1)));
+    }
+    this.syncWorkspaceControls();
+    this.comparativeViewer.setMode(mode);
+  }
+  syncWorkspaceControls() {
+    const run = state.currentRun();
+    if (this.workspaceMode === 'visualize' && !run) {
+      this.workspaceMode = 'build';
+      state.exitRunView();
+    }
+    $$('.app-workspace-tab').forEach(button => {
+      const mode = button.dataset.workspaceMode;
+      button.classList.toggle('active', mode === this.workspaceMode);
+      if (mode === 'visualize') button.disabled = !state.runs.length;
+    });
+    const layout = $('.studio-layout');
+    layout?.classList.toggle('visualization-workspace', this.workspaceMode === 'visualize');
+    const bar = $('#visualization-workspace-bar'), canvas = $('#grid-canvas'), view = $('#technique-view');
+    const visualizing = this.workspaceMode === 'visualize';
+    if (bar) bar.hidden = !visualizing;
+    if (canvas) canvas.hidden = visualizing;
+    if (view) view.hidden = !visualizing;
+    const runSelect = $('#visualization-run-select');
+    if (runSelect) {
+      const current = state.selectedRunId || '';
+      runSelect.innerHTML = state.runs.map(r => `<option value="${esc(r.id)}">${esc(r.name || r.id)}</option>`).join('');
+      if (current && state.runs.some(r => r.id === current)) runSelect.value = current;
+    }
+    if (!visualizing) this.hideVisualizationInspector();
+    $$('.visualization-mode-tab').forEach(button => {
+      button.disabled = !run;
+      button.classList.toggle('active', button.dataset.visualizationMode === this.visualizationMode);
+      button.setAttribute('aria-selected', button.dataset.visualizationMode === this.visualizationMode ? 'true' : 'false');
+    });
+    if (visualizing && run) this.comparativeViewer.render();
+  }
+  syncVisualizationControls() { this.syncWorkspaceControls(); }
+  hideVisualizationInspector() {
+    this.visualizationInspectorRegionId = null;
+    this.visualizationInspectorTime = null;
+    const inspector = $('#visualization-inspector');
+    if (inspector) inspector.hidden = true;
+  }
+  renderVisualizationInspector(id = this.visualizationInspectorRegionId, time = this.visualizationInspectorTime) {
+    const inspector = $('#visualization-inspector'), title = $('#visualization-inspector-title'), body = $('#visualization-inspector-body'), run = state.currentRun();
+    if (!inspector || !title || !body || this.workspaceMode !== 'visualize' || !run || !id) { if (inspector) inspector.hidden = true; return; }
+    const meta = (run.regions || []).find(r => r.id === id);
+    const effectiveTime = time == null ? state.currentTimeStep : Number(time);
+    const frame = run.history?.[effectiveTime];
+    const region = frame instanceof Map ? frame.get(id) : Array.isArray(frame) ? frame.find(r => r?.id === id) : null;
+    const value = region || meta;
+    if (!value) { inspector.hidden = true; return; }
+    const population = Number(value.population ?? meta?.population ?? 0) || 0;
+    const infected = Number(value.infected ?? 0) || 0;
+    const pct = population > 0 ? (infected / population) * 100 : 0;
+    this.visualizationInspectorRegionId = id;
+    this.visualizationInspectorTime = time == null ? null : effectiveTime;
+    title.textContent = meta?.name ? `${meta.name} · ${id}` : id;
+    body.innerHTML = `<div><span>Instante</span><strong>t = ${esc(effectiveTime)}</strong></div><div><span>Infectados</span><strong>${esc(infected)}</strong></div><div><span>População</span><strong>${esc(population)}</strong></div><div><span>Intensidade</span><strong>${pct.toFixed(1)}%</strong></div>`;
+    inspector.hidden = false;
+  }
   runRegionMap(run = state.viewRun?.() || state.currentRun()) { return new Map((run?.regions || []).filter(r => r?.id).map(r => [r.id, r])); }
   viewRegionMap() { const run = state.viewRun?.(); return run ? this.runRegionMap(run) : state.regions; }
   viewPropagation() { return state.viewRun?.()?.propagation || state.propagation; }
@@ -60,17 +206,17 @@ class App {
   bindDirectionInputs() { const map = { '#direction-key': 'direction', '#direction-profile': 'directionProfile', '#direction-cone': 'coneAngle', '#direction-strength': 'directionStrength', '#direction-forward': 'forwardWeight', '#direction-lateral': 'lateralLeak', '#direction-backward': 'backwardLeak', '#direction-diagonal': 'diagonalPenalty' }; $('#direction-enabled').addEventListener('change', e => state.updateDirection({ enabled: e.target.checked })); for (const [sel, key] of Object.entries(map)) $(sel).addEventListener('change', e => state.updateDirection({ [key]: key === 'direction' || key === 'directionProfile' ? e.target.value : Number(e.target.value) })); }
   onState(type, data) {
     if (type === 'NOTIFICATION') { this.toast(data.level, data.title, data.message); return; }
-    if (type === 'PROJECT_RESET') { this.pendingSpaceMode = state.space.mode; this.syncControls(); }
+    if (type === 'PROJECT_RESET') { this.workspaceMode = 'build'; this.pendingSpaceMode = state.space.mode; this.syncControls(); this.syncWorkspaceControls(); }
     if (type === 'PANEL_CHANGE') this.renderPanels();
     if (type === 'MODE_CHANGE') this.renderMode();
     if (type === 'SELECTION_CHANGE') { this.renderRegion(); this.charts.update(state); }
-    if (['SPACE_REBUILT', 'GRID_CHANGE', 'PROJECT_LOADED'].includes(type)) { this.pendingSpaceMode = state.space.mode; this.syncSpaceControls(); this.populateRegionReference(); setTimeout(() => this.renderer.resize(), 0); }
+    if (['SPACE_REBUILT', 'GRID_CHANGE', 'PROJECT_LOADED'].includes(type)) { if (type === 'PROJECT_LOADED') this.workspaceMode = 'build'; this.pendingSpaceMode = state.space.mode; this.syncSpaceControls(); this.populateRegionReference(); this.syncWorkspaceControls(); setTimeout(() => this.renderer.resize(), 0); }
     if (['SIM_CONFIG_CHANGE', 'INITIAL_CONDITIONS_CHANGE'].includes(type)) { this.syncSimulationControls(); this.renderRegion(); this.renderSeedSummary(); this.renderer.render(); }
     if (['PROPAGATION_CHANGE', 'SPACE_REBUILT'].includes(type)) { this.renderScenario(); this.renderRegion(); this.renderSeedSummary(); this.renderer.render(); }
-    if (['RUN_ADDED', 'RUN_SELECTED', 'RUN_UPDATED', 'RUN_REMOVED'].includes(type)) { this.renderRuns(); this.renderAnalysis(); this.renderTimeline(); this.renderEvents(); this.populateRegionReference(); this.charts.update(state); this.renderer.render(); }
-    if (type === 'RUN_SELECTED') setTimeout(() => { this.syncViewportLabel(); this.renderer.fit(); }, 0);
-    if (type === 'RUN_VIEW_CHANGE') { this.syncViewportLabel(); this.renderRegion(); this.renderer.resize(); }
-    if (['TIME_CHANGE', 'PLAYBACK'].includes(type)) { this.renderTimeline(); this.renderRegion(); this.renderer.render(); }
+    if (['RUN_ADDED', 'RUN_SELECTED', 'RUN_UPDATED', 'RUN_REMOVED'].includes(type)) { this.comparativeViewer.invalidate(); this.renderRuns(); this.renderAnalysis(); this.renderTimeline(); this.renderEvents(); this.populateRegionReference(); this.charts.update(state); this.renderer.render(); this.syncVisualizationControls(); }
+    if (type === 'RUN_SELECTED') { this.hideVisualizationInspector(); setTimeout(() => { this.syncViewportLabel(); this.renderer.fit(); }, 0); }
+    if (type === 'RUN_VIEW_CHANGE') { this.syncViewportLabel(); this.renderRegion(); this.renderer.resize(); this.syncVisualizationControls(); }
+    if (['TIME_CHANGE', 'PLAYBACK'].includes(type)) { this.renderTimeline(); this.renderRegion(); this.renderer.render(); if (this.visualizationMode === 'animation') this.comparativeViewer.render(); if (type === 'TIME_CHANGE' && this.visualizationInspectorRegionId && this.visualizationInspectorTime == null) this.renderVisualizationInspector(); }
     if (type === 'VIEW_CHANGE') { this.renderCompartments(); this.renderer.render(); }
     this.syncViewportLabel();
     this.renderDirty();
@@ -88,7 +234,7 @@ class App {
   syncSimulationControls() { const c = state.simulationConfig; $('#sim-beta').value = c.beta; $('#sim-gamma').value = c.gamma; $('#sim-nu').value = c.nu; $('#sim-mobility').value = c.mobility; $('#sim-local-weight').value = c.localTransmissionWeight; $('#sim-spatial-weight').value = c.spatialTransmissionWeight ?? 1; $('#sim-noise').value = c.parameterNoise; $('#sim-steps').value = c.timeSteps; $('#sim-unit').value = c.temporalUnit; $('#sim-seed').value = c.seed; $('#sim-initial-vaccination').value = c.initialVaccinationPct ?? 15; $('#sim-vaccination-variation').value = c.initialVaccinationVariationPct ?? 10; }
   syncDirectionControls() { const d = state.propagation.direction; $('#direction-enabled').checked = d.enabled !== false; $('#direction-key').value = d.direction; $('#direction-profile').value = d.directionProfile; $('#direction-cone').value = d.coneAngle; $('#direction-strength').value = d.directionStrength; $('#direction-forward').value = d.forwardWeight; $('#direction-lateral').value = d.lateralLeak; $('#direction-backward').value = d.backwardLeak; $('#direction-diagonal').value = d.diagonalPenalty; }
   syncPropagationSettings() { $('#path-susceptibility-default').value = state.propagation.pathSettings?.susceptibilityMultiplier ?? 2.5; $('#barrier-vaccination-default').value = state.propagation.barrierSettings?.vaccinationCoverage ?? 100; }
-  renderAll() { this.renderPanels(); this.renderMode(); this.renderCompartments(); this.renderScenario(); this.renderRegion(); this.renderSeedSummary(); this.renderRuns(); this.renderAnalysis(); this.renderTimeline(); this.renderEvents(); this.renderDirty(); this.syncViewportLabel(); this.renderer.render(); this.charts.update(state); }
+  renderAll() { this.renderPanels(); this.renderMode(); this.renderCompartments(); this.renderScenario(); this.renderRegion(); this.renderSeedSummary(); this.renderRuns(); this.renderAnalysis(); this.renderTimeline(); this.renderEvents(); this.renderDirty(); this.syncViewportLabel(); this.renderer.render(); this.charts.update(state); this.syncVisualizationControls(); }
   renderPanels() { $$('.property-tab').forEach(b => b.classList.toggle('active', b.dataset.panel === state.activePanel)); $$('.property-content').forEach(p => p.classList.toggle('active', p.dataset.panelContent === state.activePanel)); if (state.activePanel === 'region') this.renderRegion(); if (state.activePanel === 'analysis') this.renderAnalysis(); }
   renderMode() { const [title, help] = MODE_INFO[state.interactionMode] || MODE_INFO.select; $('#mode-title').textContent = title; const pending = state.pendingSourceId ? (state.interactionMode === INTERACTION_MODES.ADD_PREFERRED ? ` Última região: ${state.pendingSourceId}.` : ` Primeira região: ${state.pendingSourceId}.`) : ''; $('#mode-help').textContent = help + pending; $('#btn-cancel-mode').hidden = state.interactionMode === INTERACTION_MODES.SELECT; $$('.tool').forEach(b => b.classList.toggle('active', b.dataset.mode === state.interactionMode)); }
   renderCompartments() { $$('.comp-tab').forEach(b => b.classList.toggle('active', b.dataset.comp === state.activeCompartmentView)); } renderDirty() { $('#dirty-badge').hidden = !state.dirty; $('#run-warning').hidden = !(state.dirty && !!state.currentRun()); } setZoom(v) { $('#zoom-label').textContent = `${Math.round(v * 100)}%`; }
@@ -116,12 +262,12 @@ class App {
   }
   saveRegion() { const id = state.selectedRegionId; if (!id) return; const manual = $('#region-manual-initial').checked; state.updateRegion(id, { population: num('#region-pop', 1), infected: num('#region-i'), recovered: num('#region-r'), vaccinated: num('#region-v'), initialConditionMode: manual ? 'manual' : 'seeded', localParameters: { susceptibilityMultiplier: num('#region-susc-m', 1), betaMultiplier: num('#region-beta-m', 1), gammaMultiplier: num('#region-gamma-m', 1), vaccinationMultiplier: num('#region-nu-m', 1), mobilityMultiplier: num('#region-mobility-m', 1) } }); this.renderRegion(); this.renderSeedSummary(); this.toast('success', 'Região atualizada', manual ? `${id} manterá S/V manuais.` : `${id} voltará a usar S/V gerados pela semente.`); }
   checkIsolation() { const origins = state.propagation.origins.filter(o => o.enabled !== false).map(o => o.regionId); if (!origins.length) { this.toast('warning', 'Sem origem', 'Adicione pelo menos uma origem antes de verificar o isolamento.'); return; } const graph = buildWeightedEdges(state.getSpaceConfig(), buildInitialRegions(state.regions, state.simulationConfig, state.propagation), state.propagation), adj = new Map(); for (const e of graph.edges) if (e.enabled) { if (!adj.has(e.sourceRegionId)) adj.set(e.sourceRegionId, []); adj.get(e.sourceRegionId).push(e.targetRegionId); } const seen = new Set(origins.filter(id => state.regions.has(id))), q = [...seen]; while (q.length) { const a = q.shift(); for (const b of adj.get(a) || []) if (!seen.has(b)) { seen.add(b); q.push(b); } } const unreachable = [...state.regions.keys()].filter(id => !seen.has(id)), box = $('#isolation-result'); box.innerHTML = `<strong>${unreachable.length ? `${unreachable.length} regiões isoladas das origens` : 'Nenhuma região isolada'}</strong><span>${unreachable.length ? `A propagação espacial normal não alcança: ${unreachable.slice(0, 12).map(id => esc(state.regions.get(id)?.name || id)).join(', ')}${unreachable.length > 12 ? '…' : ''}` : 'Existe caminho espacial aberto das origens para todas as regiões não bloqueadas.'}</span>`; this.toast(unreachable.length ? 'success' : 'warning', 'Verificação de isolamento', unreachable.length ? `${unreachable.length} regiões não são alcançáveis por transmissão espacial normal.` : 'Nenhuma área ficou isolada.'); }
-  simulate() { try { this.animation.pause(); const id = `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, regions = new Map([...state.regions].map(([k, r]) => [k, { ...r, geometry: r.geometry ? clone(r.geometry) : null, neighbors: [...(r.neighbors || [])], sourceProperties: clone(r.sourceProperties || {}), localParameters: { ...(r.localParameters || {}) } }])), propagation = clone(state.propagation), simulationConfig = clone(state.simulationConfig), grid = clone(state.grid), space = clone(state.space), result = runSIRVSimulation({ spaceConfig: state.getSpaceConfig(), gridConfig: grid, simulationConfig, regions, propagation }), initialRegions = result.initialRegions || regions, run = { id, name: `Execução ${state.runs.length + 1}`, createdAt: new Date().toISOString(), seed: simulationConfig.seed, status: 'review', notes: '', space, grid, simulationConfig, propagation, regions: [...initialRegions.values()], history: result.history, eventLog: result.eventLog, edges: result.edges }; run.summary = analyzeRun(run, initialRegions, { arrivalThreshold: num('#analysis-threshold', 1), referenceRegionId: $('#analysis-reference').value || null }); state.registerRun(run); state.setPanel('runs'); this.showBottomTab('timeline'); $('#bottom-panel').classList.remove('collapsed'); $('#btn-toggle-bottom').textContent = 'Recolher'; this.toast('success', 'Simulação pronta', `${run.history.length} instantes foram gerados. A animação está habilitada; pressione ▶.`); } catch (error) { console.error(error); this.toast('danger', 'Falha na simulação', error.message); } }
+  simulate() { try { this.animation.pause(); const id = `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, regions = new Map([...state.regions].map(([k, r]) => [k, { ...r, geometry: r.geometry ? clone(r.geometry) : null, neighbors: [...(r.neighbors || [])], sourceProperties: clone(r.sourceProperties || {}), localParameters: { ...(r.localParameters || {}) } }])), propagation = clone(state.propagation), simulationConfig = clone(state.simulationConfig), grid = clone(state.grid), space = clone(state.space), result = runSIRVSimulation({ spaceConfig: state.getSpaceConfig(), gridConfig: grid, simulationConfig, regions, propagation }), initialRegions = result.initialRegions || regions, run = { id, name: `Execução ${state.runs.length + 1}`, createdAt: new Date().toISOString(), seed: simulationConfig.seed, status: 'review', notes: '', space, grid, simulationConfig, propagation, regions: [...initialRegions.values()], history: result.history, eventLog: result.eventLog, edges: result.edges }; run.summary = analyzeRun(run, initialRegions, { arrivalThreshold: num('#analysis-threshold', 1), referenceRegionId: $('#analysis-reference').value || null }); state.registerRun(run); state.setPanel('runs'); this.showBottomTab('timeline'); $('#bottom-panel').classList.remove('collapsed'); $('#btn-toggle-bottom').textContent = 'Recolher'; this.setWorkspaceMode('visualize', 'animation'); this.toast('success', 'Simulação pronta', `${run.history.length} instantes foram gerados. Escolha Animação, Small multiples ou Projeção 1D para comparar a propagação.`); } catch (error) { console.error(error); this.toast('danger', 'Falha na simulação', error.message); } }
   showBottomTab(name) { $$('.bottom-tab').forEach(x => x.classList.toggle('active', x.dataset.bottom === name)); $$('.bottom-content').forEach(x => x.classList.toggle('active', x.dataset.bottomContent === name)); setTimeout(() => { this.charts.draw(); this.renderer.resize(); }, 0); }
   renderRuns() {
     const box = $('#runs-list');
     if (!state.runs.length) { box.innerHTML = '<div class="empty-state">Nenhuma execução ainda.</div>'; $('#selected-run-actions').hidden = true; this.renderRunConfiguration(null); return; }
-    box.innerHTML = state.runs.map(r => `<div class="run-card ${r.id === state.selectedRunId ? 'selected' : ''}" data-run-id="${esc(r.id)}" role="button" tabindex="0" aria-label="Selecionar ${esc(r.name || r.id)}"><div class="run-card-head"><span class="run-name" title="${esc(r.name || r.id)}">${esc(r.name || r.id)}</span><span class="run-card-actions"><button class="icon-button run-rename" type="button" data-run-action="rename" title="Renomear execução" aria-label="Renomear execução">✎</button><button class="icon-button run-delete" type="button" data-run-action="delete" title="Excluir execução" aria-label="Excluir execução">×</button><span class="run-status ${r.status}">${r.status === 'approved' ? 'Aprovada' : r.status === 'rejected' ? 'Rejeitada' : 'Em análise'}</span></span></div><div class="run-meta"><span>${esc(r.space?.mode || 'grid')}</span><span>seed ${esc(r.seed ?? '—')}</span><span>${r.history?.length || 0} instantes</span><span>pico I ${r.summary?.globalPeak?.infected ?? 0}</span></div></div>`).join('');
+    box.innerHTML = state.runs.map(r => `<div class="run-card ${r.id === state.selectedRunId ? 'selected' : ''}" data-run-id="${esc(r.id)}" role="button" tabindex="0" aria-label="Selecionar ${esc(r.name || r.id)}"><div class="run-card-head"><span class="run-name" title="${esc(r.name || r.id)}">${esc(r.name || r.id)}</span><span class="run-card-actions"><button class="run-visualize" type="button" data-run-action="visualize" title="Abrir nas técnicas de visualização">Visualizar</button><button class="icon-button run-rename" type="button" data-run-action="rename" title="Renomear execução" aria-label="Renomear execução">✎</button><button class="icon-button run-delete" type="button" data-run-action="delete" title="Excluir execução" aria-label="Excluir execução">×</button><span class="run-status ${r.status}">${r.status === 'approved' ? 'Aprovada' : r.status === 'rejected' ? 'Rejeitada' : 'Em análise'}</span></span></div><div class="run-meta"><span>${esc(r.space?.mode || 'grid')}</span><span>seed ${esc(r.seed ?? '—')}</span><span>${r.history?.length || 0} instantes</span><span>pico I ${r.summary?.globalPeak?.infected ?? 0}</span></div></div>`).join('');
     const run = state.currentRun();
     $('#selected-run-actions').hidden = !run;
     if (run) $('#run-notes').value = run.notes || '';
@@ -147,7 +293,7 @@ class App {
   renameRun(id, card) { const run = state.runs.find(x => x.id === id), target = card?.querySelector('.run-name'); if (!run || !target) return; const previous = run.name || run.id, input = document.createElement('input'); input.className = 'run-name-input'; input.type = 'text'; input.maxLength = 80; input.value = previous; let finished = false; const finish = save => { if (finished) return; finished = true; if (save) state.updateRun(id, { name: input.value.trim() || previous }); else this.renderRuns(); }; input.addEventListener('click', e => e.stopPropagation()); input.addEventListener('blur', () => finish(true)); input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { e.preventDefault(); finish(false); } }); target.replaceWith(input); input.focus(); input.select(); }
   deleteRun(id) { const run = state.runs.find(x => x.id === id); if (!run || !confirm(`Excluir a execução "${run.name || run.id}"?`)) return; if (state.selectedRunId === id) this.animation.pause(); state.removeRun(id); this.toast('success', 'Execução excluída', run.name || run.id); }
   setRunStatus(status) { const run = state.currentRun(); if (!run) return; state.updateRun(run.id, { status }); this.toast('success', status === 'approved' ? 'Execução aprovada' : 'Execução rejeitada', run.id); }
-  renderTimeline() { const run = state.currentRun(), slider = $('#time-slider'), enabled = !!run; slider.max = run ? run.history.length - 1 : 0; slider.value = state.currentTimeStep; $('#time-step-badge').textContent = enabled ? `t = ${state.currentTimeStep}` : 't = —'; $('#btn-play-pause').textContent = state.isPlaying ? '❚❚' : '▶'; for (const id of ['#btn-reset', '#btn-step-back', '#btn-play-pause', '#btn-step-forward', '#time-slider', '#playback-speed']) $(id).disabled = !enabled; $('#timeline-controls').classList.toggle('is-disabled', !enabled); const gate = $('#simulation-gate'); gate.classList.toggle('ready', enabled); gate.querySelector('strong').textContent = enabled ? 'Simulação pronta para animar' : 'Animação ainda não disponível'; gate.querySelector('span').textContent = enabled ? 'Use ▶, os botões de passo ou arraste a linha do tempo.' : 'Primeiro execute a simulação. Depois use ▶, os passos ou o controle temporal.'; $('#btn-simulate-timeline').textContent = enabled ? 'Executar novamente' : 'Executar simulação'; }
+  renderTimeline() { const run = state.currentRun(), slider = $('#time-slider'), enabled = !!run, techniquePlayback = this.workspaceMode === 'visualize' && (run?.history?.length || 0) > 1; slider.min = techniquePlayback ? 1 : 0; slider.max = run ? run.history.length - 1 : 0; slider.value = Math.max(Number(slider.min) || 0, state.currentTimeStep); $('#time-step-badge').textContent = enabled ? `t = ${state.currentTimeStep}` : 't = —'; $('#btn-play-pause').textContent = state.isPlaying ? '❚❚' : '▶'; for (const id of ['#btn-reset', '#btn-step-back', '#btn-play-pause', '#btn-step-forward', '#time-slider', '#playback-speed']) $(id).disabled = !enabled; $('#timeline-controls').classList.toggle('is-disabled', !enabled); const gate = $('#simulation-gate'); gate.classList.toggle('ready', enabled); gate.querySelector('strong').textContent = enabled ? 'Simulação pronta para animar' : 'Animação ainda não disponível'; gate.querySelector('span').textContent = enabled ? 'Use ▶, os botões de passo ou arraste a linha do tempo.' : 'Primeiro execute a simulação. Depois use ▶, os passos ou o controle temporal.'; $('#btn-simulate-timeline').textContent = enabled ? 'Executar novamente' : 'Executar simulação'; }
   renderEvents() { const run = state.currentRun(), box = $('#event-log'); if (!run) { box.className = 'event-log empty-state'; box.textContent = 'Execute uma simulação para visualizar os eventos.'; return; } box.className = 'event-log'; const events = run.eventLog || []; box.innerHTML = events.length ? events.map(e => `<div class="event-row"><strong>t=${e.time}</strong><span>${esc(e.type)}</span><span>${esc(e.regionId || `${e.sourceRegionId || ''} → ${e.targetRegionId || ''}`)} ${e.infectedCount ? `· ${e.infectedCount} infectados` : ''}${e.infectedIntroduced ? `· ${e.infectedIntroduced} introduzidos` : ''}${e.reason ? `· ${e.reason}` : ''}</span></div>`).join('') : '<div class="empty-state">Nenhum evento externo foi executado.</div>'; }
   populateRegionReference() { const sel = $('#analysis-reference'), current = sel.value, run = state.currentRun(), regions = run ? this.runRegionMap(run) : state.regions; sel.innerHTML = '<option value="">Nenhuma</option>' + [...regions.values()].map(r => `<option value="${esc(r.id)}">${esc(r.name || r.id)} · ${esc(r.id)}</option>`).join(''); if (regions.has(current)) sel.value = current; $('#analysis-threshold').value = state.analysisOptions.arrivalThreshold || 1; }
   refreshAnalysis() { state.analysisOptions = { arrivalThreshold: Math.max(1, num('#analysis-threshold', 1)), referenceRegionId: $('#analysis-reference').value || null }; const run = state.currentRun(); if (run) { const regions = new Map(run.regions.map(r => [r.id, r])); run.summary = analyzeRun(run, regions, state.analysisOptions); state.notify('RUN_UPDATED', { id: run.id }); } }
@@ -160,6 +306,7 @@ class App {
       const data = JSON.parse(await file.text());
       if (!String(data.schemaVersion || '').startsWith('4.')) throw new Error('O arquivo não usa um schema 4.x compatível.');
       this.animation.pause();
+      this.workspaceMode = 'build';
       const oldSchema = String(data.schemaVersion || '');
       state.project = { ...state.project, ...(data.project || {}), schemaVersion: '4.4.0' };
       state.space = { ...state.space, ...(data.space || { mode: SPATIAL_MODES.GRID, sourceLabel: 'Grid regular' }), synthetic: { ...state.space.synthetic, ...(data.space?.synthetic || {}) }, geojson: { ...state.space.geojson, ...(data.space?.geojson || {}) } };
@@ -194,6 +341,7 @@ class App {
       this.pendingSpaceMode = state.space.mode;
       this.syncControls();
       this.renderAll();
+      this.syncWorkspaceControls();
       this.renderer.fit();
       const restoredNote = restored.errors.length ? ` ${restored.errors.length} execução(ões) inválida(s) foi(ram) ignorada(s).` : '';
       this.toast(restored.errors.length ? 'warning' : 'success', 'Projeto importado', `${oldSchema === '4.4.0' ? `${state.project.name} foi carregado.` : `${state.project.name} foi migrado de ${oldSchema || '4.x'} para 4.4.0.`}${restoredNote}`);

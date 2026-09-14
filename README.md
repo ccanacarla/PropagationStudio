@@ -1,4 +1,4 @@
-# Propagation Studio 4.4.0
+# Propagation Studio 4.6.0
 
 Aplicação web estática para construir, simular, revisar e exportar eventos SIRV estocásticos. Funciona em GitHub Pages e não exige backend.
 
@@ -70,6 +70,27 @@ O botão **Download (.zip)** gera um pacote com:
 
 O arquivo de projeto salva geometria, atributos importados, topologia, cenário, execuções, execução selecionada e instante atual para reabertura posterior.
 
+## Workspaces de construção e visualização
+
+A interface separa duas tarefas de IHC que antes competiam pelo mesmo espaço:
+
+1. **Construir cenário** — editor espacial completo, com ferramentas, parâmetros e painel de propriedades.
+2. **Visualizar execuções** — workspace de análise que ocupa a área central inteira e remove temporariamente as ferramentas de edição, o painel lateral e a gaveta inferior.
+
+O modo **Visualizar execuções** é habilitado quando existe pelo menos uma execução. A execução pode ser escolhida no seletor do próprio workspace ou aberta pelo botão **Visualizar** no card da aba Execuções.
+
+Nesse workspace há três técnicas, tratadas como alternativas de representação do mesmo dado:
+
+1. **Animação** — reproduz a propagação quadro a quadro no grid ou mapa.
+2. **Small multiples** — mostra todos os instantes da execução simultaneamente em painéis espaciais.
+3. **Projeção 1D** — transforma espaço × tempo em uma matriz, com regiões nas colunas e instantes nas linhas.
+
+As três técnicas usam **a mesma execução selecionada** e não recalculam a simulação. O sinal visual é a porcentagem de infectados por região (`I / população × 100`), em escala fixa de **0–100%**, usando a mesma sequência temporal da execução a partir de `t=1`. Ao trocar de técnica, o instante corrente é preservado sempre que aplicável.
+
+No **Small multiples**, nenhum instante é amostrado ou descartado: todos os passos visualizáveis são mostrados. Na **Projeção 1D**, grids usam uma ordenação espacial do tipo Gilbert/Hilbert; mapas usam agrupamento hierárquico Ward para manter regiões próximas também próximas na projeção. Ao apontar ou selecionar uma célula da matriz, o minimapa destaca a região correspondente e seus vizinhos reais.
+
+Ao importar um projeto compartilhado, basta entrar em **Visualizar execuções**, selecionar uma execução e escolher uma das três técnicas. Cada visualização usa o snapshot salvo daquela execução — espaço, regiões, topologia e histórico — mesmo que o cenário editável atual seja diferente.
+
 ## Execução local
 
 ```bash
@@ -84,4 +105,10 @@ Acesse `http://localhost:8000`.
 npm test
 ```
 
-A versão 4.4.0 inclui testes do grid, mapa sintético, GeoJSON, adjacência, bloqueio, seeds, eventos, análises e exportações.
+A versão 4.5.0 inclui os testes anteriores e testes específicos das três técnicas de visualização, adaptação do histórico, ordenação espacial e integração com execuções selecionadas.
+
+## Refinamentos de IHC — v4.7.0
+
+O workspace **Visualizações** foi refinado para reduzir carga cognitiva e tornar a comparação entre técnicas mais controlada. A execução selecionada, a variável visualizada e a escala são apresentadas uma única vez. As três técnicas — **Animação**, **Small multiples** e **Projeção 1D** — usam a mesma escala fixa de infectados (%) e a mesma execução.
+
+Na Animação há navegação temporal completa. Small multiples preserva todos os instantes e permite somente ajustar o tamanho visual dos quadros. A Projeção 1D mantém seleções por clique. Clicar em uma região em qualquer técnica abre um painel contextual com os valores daquele exemplo, sem retornar ao editor.

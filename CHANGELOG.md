@@ -1,4 +1,52 @@
+# v4.7.4
+
+- Corrige o layout do `canvas-card` para manter `canvas-legend` na faixa inferior no modo de construção.
+- Substitui Compacto/Médio/Grande do Small Multiples por slider contínuo de 90–320 px.
+- O slider fica ao lado do título Small multiples e atualiza o tamanho dos quadros em tempo real.
+- Nenhuma alteração no motor SIRV ou nos dados das execuções.
+
 # Changelog
+
+## 4.7.0 — refinamentos de IHC nas visualizações
+
+- Barra do workspace de visualização simplificada e com hierarquia explícita: execução → técnica → visualização.
+- `Visualizar execuções` foi encurtado para `Visualizações` e ganhou `← Cenário` como retorno explícito.
+- Escala de infectados (%) passou a ser única e fixa na barra superior para as três técnicas.
+- Cabeçalhos internos das técnicas deixaram de repetir execução, variável e escala.
+- Animação ganhou controles completos: primeiro, anterior, play/pausa, próximo, último e slider temporal.
+- Clique em região abre um painel contextual com instante, infectados, população e intensidade (%).
+- Small multiples continua exibindo todos os instantes e ganhou apenas controle de tamanho dos quadros: Compacto, Médio e Grande.
+- Projeção 1D mantém a célula clicada selecionada após o ponteiro sair e sincroniza a inspeção contextual.
+- Cards de execução mantêm `Visualizar` como ação principal e movem Renomear/Excluir para menu `⋯`, reduzindo risco de erro.
+- Motor SIRV, propagação, importação e formatos de exportação não foram alterados.
+
+## 4.6.0
+
+- Separados dois workspaces principais: **Construir cenário** e **Visualizar execuções**.
+- **Cenário** deixou de ser tratado como uma quarta técnica de visualização.
+- No workspace de visualização, barra de ferramentas, painel de propriedades e gaveta inferior são ocultados para dar área máxima às técnicas.
+- Adicionado seletor de execução no topo do workspace de visualização.
+- Mantidas somente as abas **Animação**, **Small multiples** e **Projeção 1D** dentro da análise visual.
+- Cards de execução agora incluem ação explícita **Visualizar**.
+- Após executar uma simulação, o Studio entra diretamente no workspace de visualização em **Animação**.
+- Retornar para **Construir cenário** sai do snapshot da execução e restaura o cenário editável atual.
+- Trocar entre técnicas preserva o instante corrente quando aplicável.
+- Layout responsivo atualizado para manter o workspace visual em largura total.
+- Suíte atualizada para 60 testes automatizados.
+
+## 4.5.0
+
+- Incorporadas ao Studio as três técnicas do projeto `plot-evalution`: **Animação**, **Small multiples** e **Projeção 1D**.
+- As três técnicas usam diretamente o snapshot e o histórico da execução selecionada; nenhuma delas recalcula o SIRV.
+- Adicionado seletor central **Cenário | Animação | Small multiples | Projeção 1D**.
+- Após uma nova simulação, o Studio abre automaticamente a visualização de Animação.
+- A sequência comparativa começa em `t=1`, mantendo `t=0` como condição inicial do simulador.
+- O sinal visual foi padronizado como percentual de infectados por região (`I / população × 100`) em escala fixa de 0–100%.
+- Small multiples mostra todos os instantes visualizáveis, sem amostragem.
+- Projeção 1D usa ordenação Gilbert/Hilbert para grids e agrupamento Ward para mapas; mapas muito grandes usam fallback limitado para evitar travamentos.
+- A projeção 1D inclui matriz espaço × tempo, barra de distância, indicação de fragmentação e minimapa com destaque da região e de seus vizinhos topológicos.
+- Voltar para **Cenário** sai explicitamente do snapshot de reprodução e retorna ao cenário editável atual.
+- Adicionados 8 testes específicos das técnicas de visualização.
 
 ## 4.4.2
 
@@ -36,3 +84,5 @@
 - Adicionado verificador de isolamento por barreiras.
 - Adicionada exportação `regions.geojson` para mapas sintéticos/importados.
 - Projeto atualizado para schema `4.4.0`.
+
+- v4.7.2: Animação e Projeção 1D ajustadas para ocupar o viewport sem rolagem vertical em desktop; Projeção 1D usa matriz + minimapa lado a lado.

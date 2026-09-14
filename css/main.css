@@ -797,3 +797,152 @@ input[readonly] {
         grid-template-columns: 1fr
     }
 }
+
+/* v4.6 — navegação entre autoria do cenário e análise visual */
+.app-workspace-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid #334155;
+    border-radius: 9px;
+    background: #111827
+}
+
+.app-workspace-tab {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #94a3b8;
+    padding: 7px 11px;
+    font-size: 11px;
+    font-weight: 750;
+    white-space: nowrap
+}
+
+.app-workspace-tab:hover:not(:disabled) {
+    color: #fff;
+    background: #1e293b
+}
+
+.app-workspace-tab.active {
+    color: #fff;
+    background: #2563eb
+}
+
+.app-workspace-tab:disabled {
+    opacity: .42;
+    cursor: not-allowed
+}
+
+.run-visualize {
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 4px 7px;
+    font-size: 9px;
+    font-weight: 750;
+    cursor: pointer
+}
+
+.run-visualize:hover {
+    background: #dbeafe;
+    border-color: #93c5fd
+}
+
+@media(max-width:1150px) {
+    .app-workspace-tab {
+        padding-inline: 8px
+    }
+}
+
+@media(max-width:900px) {
+    .app-workspace-switcher {
+        order: 2
+    }
+
+    .project-actions {
+        order: 3
+    }
+}
+
+/* v4.7 — ações secundárias de execução em menu contextual */
+.run-menu {
+    position: relative;
+}
+
+.run-menu > summary {
+    list-style: none;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.run-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.run-menu > summary:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.run-menu-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 8;
+    min-width: 120px;
+    padding: 4px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15,23,42,.14);
+}
+
+.run-menu-popover button {
+    width: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #334155;
+    padding: 7px 8px;
+    text-align: left;
+    font-size: 10px;
+}
+
+.run-menu-popover button:hover {
+    background: #f1f5f9;
+}
+
+.run-menu-popover button.danger {
+    color: #b91c1c;
+}
+
+.run-menu-popover button.danger:hover {
+    background: #fef2f2;
+}
+
+.run-visualize {
+    min-height: 28px;
+    border: 1px solid #2563eb;
+    border-radius: 7px;
+    background: #2563eb;
+    color: #fff;
+    padding: 5px 9px;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.run-visualize:hover {
+    background: #1d4ed8;
+}

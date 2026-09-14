@@ -1,47 +1,41 @@
-# Validação — Propagation Studio 4.4.2
+# Validação — Propagation Studio v4.7.0
 
-## Automatizada
+## Resultado automatizado
 
-`npm test`: 51 testes aprovados, 0 falhas.
+- **64 testes aprovados, 0 falhas**.
+- 51 verificações do núcleo do Studio.
+- 13 verificações das técnicas de visualização e da integração de IHC.
+- `node --check` aprovado para `js/app.js` e `js/visualization/comparative-viewer.js`.
 
-Cobertura relevante:
+## O que os testes novos verificam
 
-- heterogeneidade S/V reproduzível por seed;
-- conservação populacional;
-- origens, focos e saltos;
-- bloqueio vacinal parcial e total;
-- bloqueio total impedindo travessia espacial;
-- caminhos de maior suscetibilidade;
-- anisotropia direcional;
-- mapa sintético reproduzível por seed espacial;
-- validação e normalização de GeoJSON;
-- seleção de ID/nome/população;
-- adjacência por fronteira compartilhada;
-- bloqueio total em mapas;
-- exportação GeoJSON;
-- serialização/desserialização de execuções com nome e configuração;
-- compatibilidade com históricos 4.x em arrays, pares e objetos por região;
-- resolução de IDs duplicados em execuções importadas;
-- exclusão segura da execução selecionada;
-- geração de ZIP a partir de uma execução restaurada;
-- consistência entre IDs referenciados em `app.js` e elementos presentes no HTML;
-- JSZip vendorizado para execução estática no GitHub Pages;
-- seleção de execução ativando o snapshot completo para reprodução;
-- retorno automático ao cenário atual quando ele é editado;
-- Play e navegação temporal reativando o snapshot selecionado;
-- renderer usando espaço, grid, regiões e propagação próprios de cada execução.
+- legenda fixa e compartilhada de infectados (%);
+- retorno explícito ao cenário;
+- painel contextual de inspeção de região;
+- controles temporais completos da Animação;
+- Small multiples preservando todos os instantes, com ajuste apenas de tamanho;
+- manutenção dos três modos comparativos sem introduzir um quarto modo de cenário.
 
-## Verificações estáticas
+## Validação visual
 
-- todos os módulos JavaScript passam em `node --check`;
-- nenhum seletor `#id` usado por `app.js` aponta para elemento ausente;
-- nenhum import local quebrado;
-- IDs HTML sem duplicação.
+Foi tentada uma validação automatizada com Chromium/Playwright, mas o navegador deste ambiente bloqueia navegação para `localhost` e `file://` por política administrativa (`ERR_BLOCKED_BY_ADMINISTRATOR`). A validação funcional ficou coberta pela suíte automatizada e pelas verificações sintáticas; recomenda-se conferência visual final no navegador local.
 
-## Limitações conhecidas
+## Escopo
 
-- a adjacência por fronteira faz comparações geométricas no navegador e pode ficar lenta com centenas de polígonos muito detalhados;
-- GeoJSON com `Point`, `LineString` e `GeometryCollection` não é aceito nesta versão;
-- GeoJSON com fronteiras numericamente incompatíveis pode produzir regiões isoladas; nesses casos use **Vizinhos mais próximos**;
-- a visualização usa projeção cartesiana simples do bounding box e não substitui um GIS para análise cartográfica de precisão;
-- a tentativa de automação visual por Chromium headless não concluiu neste ambiente por restrições do processo do navegador; a validação visual final deve ser feita em um navegador local.
+Não houve alteração no motor SIRV, pesos espaciais, eventos de propagação, serialização de projetos ou formatos de exportação.
+
+## v4.7.2 — ajuste de viewport
+- Alteração funcional restrita a `css/layout.css`.
+- Animação: mapa passa a usar o espaço vertical restante do workspace, evitando rolagem vertical.
+- Projeção 1D (desktop): matriz e minimapa ficam lado a lado e dimensionados pelo espaço disponível, evitando rolagem vertical da técnica.
+- Small Multiples permanece com rolagem, pois pode conter muitos instantes.
+- A rolagem horizontal interna da matriz 1D pode permanecer quando houver muitas regiões, preservando a legibilidade das células.
+- CSS analisado com `tinycss2`: 0 erros de parsing.
+- A suíte JavaScript não foi reexecutada nesta revisão porque o pacote distribuído não inclui `node_modules`; nenhum arquivo JavaScript foi alterado em relação à v4.7.1 validada anteriormente.
+## v4.7.4
+
+- 51 testes do núcleo: aprovados.
+- 13 testes de visualização/IHC: aprovados.
+- Total: 64 testes, 0 falhas.
+- `comparative-viewer.js`: verificação sintática aprovada.
+
