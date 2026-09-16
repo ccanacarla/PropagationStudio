@@ -111,7 +111,7 @@ class App {
     this.workspaceMode = mode;
     if (mode === 'visualize') {
       if (technique) this.visualizationMode = technique;
-      if (!['animation', 'small_multiples', 'projection1d'].includes(this.visualizationMode)) this.visualizationMode = 'animation';
+      if (!['animation', 'small_multiples', 'projection1d', 'glyph'].includes(this.visualizationMode)) this.visualizationMode = 'animation';
       state.activateRunView(run.id);
       if (run.history?.length > 1) state.setTimeStep(1);
     } else {
@@ -124,7 +124,7 @@ class App {
     return true;
   }
   setVisualizationMode(mode) {
-    if (!['animation', 'small_multiples', 'projection1d'].includes(mode)) mode = 'animation';
+    if (!['animation', 'small_multiples', 'projection1d', 'glyph'].includes(mode)) mode = 'animation';
     const run = state.currentRun();
     if (!run) { this.toast('warning', 'Sem execução', 'Execute ou selecione uma execução antes de abrir esta técnica.'); return; }
     this.visualizationMode = mode;
@@ -216,7 +216,7 @@ class App {
     if (['RUN_ADDED', 'RUN_SELECTED', 'RUN_UPDATED', 'RUN_REMOVED'].includes(type)) { this.comparativeViewer.invalidate(); this.renderRuns(); this.renderAnalysis(); this.renderTimeline(); this.renderEvents(); this.populateRegionReference(); this.charts.update(state); this.renderer.render(); this.syncVisualizationControls(); }
     if (type === 'RUN_SELECTED') { this.hideVisualizationInspector(); setTimeout(() => { this.syncViewportLabel(); this.renderer.fit(); }, 0); }
     if (type === 'RUN_VIEW_CHANGE') { this.syncViewportLabel(); this.renderRegion(); this.renderer.resize(); this.syncVisualizationControls(); }
-    if (['TIME_CHANGE', 'PLAYBACK'].includes(type)) { this.renderTimeline(); this.renderRegion(); this.renderer.render(); if (this.visualizationMode === 'animation') this.comparativeViewer.render(); if (type === 'TIME_CHANGE' && this.visualizationInspectorRegionId && this.visualizationInspectorTime == null) this.renderVisualizationInspector(); }
+    if (['TIME_CHANGE', 'PLAYBACK'].includes(type)) { this.renderTimeline(); this.renderRegion(); this.renderer.render(); if (['animation', 'glyph'].includes(this.visualizationMode)) this.comparativeViewer.render(); if (type === 'TIME_CHANGE' && this.visualizationInspectorRegionId && this.visualizationInspectorTime == null) this.renderVisualizationInspector(); }
     if (type === 'VIEW_CHANGE') { this.renderCompartments(); this.renderer.render(); }
     this.syncViewportLabel();
     this.renderDirty();

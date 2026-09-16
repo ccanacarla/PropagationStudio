@@ -46,9 +46,9 @@ test('Interface separa Construir cenário e Visualizar execuções em workspaces
   assert.match(html,/id="visualization-run-select"/);
 });
 
-test('Workspace de visualização expõe apenas as três técnicas comparativas',()=>{
+test('Workspace de visualização expõe as quatro técnicas disponíveis',()=>{
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  for(const mode of ['animation','small_multiples','projection1d']) assert.match(html,new RegExp(`data-visualization-mode="${mode}"`));
+  for(const mode of ['animation','small_multiples','projection1d','glyph']) assert.match(html,new RegExp(`data-visualization-mode="${mode}"`));
   assert.doesNotMatch(html,/data-visualization-mode="scenario"/);
   assert.match(html,/id="technique-view"/);
 });
@@ -90,4 +90,25 @@ test('Small multiples preserva todos os instantes e oferece apenas ajuste de tam
   assert.match(viewer,/stimulus\.frameTimes\.map/);
 });
 
+
+
+test('Glifo segue o desenho temporal descrito no artigo',()=>{
+  const viewer=fs.readFileSync(new URL('../js/visualization/comparative-viewer.js',import.meta.url),'utf8');
+  assert.match(viewer,/renderGlyph\(stimulus\)/);
+  assert.ok(viewer.includes('data-glyph-time-slider'));
+  assert.ok(viewer.includes('pe-glyph-cell'));
+  assert.ok(viewer.includes('time-selected'));
+  assert.ok(viewer.includes('layoutGlyphs'));
+  assert.match(viewer,/stimulus\.series\[region\.id\]/);
+});
+
+test('Glifo usa mapa único e destaque temporal global, sem recalcular a simulação',()=>{
+  const viewer=fs.readFileSync(new URL('../js/visualization/comparative-viewer.js',import.meta.url),'utf8');
+  const app=fs.readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.ok(viewer.includes('pe-glyph-map'));
+  assert.ok(viewer.includes('pe-glyph-layer'));
+  assert.ok(viewer.includes('.pe-glyph-cell[data-time-index'));
+  assert.match(app,/\['animation', 'small_multiples', 'projection1d', 'glyph'\]/);
+  assert.match(app,/runSIRVSimulation/);
+});
 console.log(`RESUMO VISUALIZAÇÕES: ${passed} passaram; 0 falharam.`);

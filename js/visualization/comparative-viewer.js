@@ -43,12 +43,18 @@ function valuesAt(stimulus,index){const out={};for(const r of stimulus.regions)o
 function regionPoint(r){return [Number(r.displayCentroid?.x??r.spatialX??r.column??0)||0,Number(r.displayCentroid?.y??r.spatialY??r.row??0)||0];}
 function adjacentDistances(order,regions){const byId=new Map(regions.map(r=>[r.id,r]));const ds=[];for(let i=0;i<order.length;i++){if(i===0){ds.push(0);continue;}const a=regionPoint(byId.get(order[i-1])||{}),b=regionPoint(byId.get(order[i])||{});ds.push(Math.hypot(a[0]-b[0],a[1]-b[1]));}return ds;}
 
+function glyphGridDimensions(count){
+  const n=Math.max(1,Number(count)||1),cols=Math.max(1,Math.ceil(Math.sqrt(n*1.4))),rows=Math.max(1,Math.ceil(n/cols));
+  return{cols,rows};
+}
+function glyphCellSize(count){const n=Math.max(1,Number(count)||1);if(n<=36)return 6;if(n<=64)return 5;if(n<=100)return 4;return 3;}
+
 export class ComparativeViewer{
-  constructor(container,state,actions={}){this.container=container;this.state=state;this.actions=actions;this.mode='scenario';this.runId=null;this.stimulus=null;this.animationMap=null;this.smallMultipleSize=170;}
+  constructor(container,state,actions={}){this.container=container;this.state=state;this.actions=actions;this.mode='scenario';this.runId=null;this.stimulus=null;this.animationMap=null;this.smallMultipleSize=170;this.glyphSelectedRegionId=null;this.glyphTimeIndex=0;this.resizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObserver(()=>{if(this.mode==='glyph')this.layoutGlyphs(this.getStimulus());}):null;this.resizeObserver?.observe(container);}
   setMode(mode){this.mode=mode;this.render(true);}
-  invalidate(){this.runId=null;this.stimulus=null;}
+  invalidate(){this.runId=null;this.stimulus=null;this.glyphSelectedRegionId=null;this.glyphTimeIndex=0;}
   getStimulus(){const run=this.state.currentRun?.();if(!run)return null;if(this.runId!==run.id||!this.stimulus){this.runId=run.id;this.stimulus=buildTechniqueStimulus(run);}return this.stimulus;}
-  render(force=false){if(this.mode==='scenario')return;const stimulus=this.getStimulus();if(!stimulus){this.container.innerHTML='<div class="technique-empty">Execute ou selecione uma execução para usar esta visualização.</div>';return;}if(force||this.container.dataset.mode!==this.mode||this.container.dataset.runId!==stimulus.runId){this.container.dataset.mode=this.mode;this.container.dataset.runId=stimulus.runId;if(this.mode==='animation')this.renderAnimation(stimulus);if(this.mode==='small_multiples')this.renderSmallMultiples(stimulus);if(this.mode==='projection1d')this.renderProjection(stimulus);}else if(this.mode==='animation')this.updateAnimation(stimulus);}
+  render(force=false){if(this.mode==='scenario')return;const stimulus=this.getStimulus();if(!stimulus){this.container.innerHTML='<div class="technique-empty">Execute ou selecione uma execução para usar esta visualização.</div>';return;}if(force||this.container.dataset.mode!==this.mode||this.container.dataset.runId!==stimulus.runId){this.container.dataset.mode=this.mode;this.container.dataset.runId=stimulus.runId;if(this.mode==='animation')this.renderAnimation(stimulus);if(this.mode==='small_multiples')this.renderSmallMultiples(stimulus);if(this.mode==='projection1d')this.renderProjection(stimulus);if(this.mode==='glyph')this.renderGlyph(stimulus);}else if(this.mode==='animation')this.updateAnimation(stimulus);else if(this.mode==='glyph')this.updateGlyph(stimulus,this.stepIndex(stimulus),false);}
   renderHeader(title,detail='',controls=''){return`<div class="technique-heading"><div><div class="technique-title-line"><strong>${escapeAttr(title)}</strong>${controls}</div>${detail?`<span>${escapeAttr(detail)}</span>`:''}</div></div>`;}
   stepIndex(stimulus){const t=Number(this.state.currentTimeStep)||0;let idx=stimulus.frameTimes.indexOf(t);if(idx<0)idx=0;return Math.max(0,Math.min(stimulus.timeSteps-1,idx));}
   renderAnimation(stimulus){
@@ -78,6 +84,68 @@ export class ComparativeViewer{
     const slider=this.container.querySelector('[data-small-size-slider]'),output=this.container.querySelector('[data-small-size-output]'),grid=this.container.querySelector('.pe-small-grid');
     slider?.addEventListener('input',()=>{this.smallMultipleSize=Math.max(90,Math.min(320,Number(slider.value)||170));grid?.style.setProperty('--small-card-size',`${this.smallMultipleSize}px`);if(output)output.textContent=`${this.smallMultipleSize}px`;});
     requestAnimationFrame(()=>{stimulus.frameTimes.forEach((t,i)=>{const el=this.container.querySelector(`.pe-small-map[data-index="${i}"]`);if(el)renderRegionMap(el,stimulus,valuesAt(stimulus,i),{onClick:id=>this.actions.onRegionClick?.(id,t)});});});
+  }
+  renderGlyph(stimulus){
+    const dims=glyphGridDimensions(stimulus.timeSteps),cellSize=glyphCellSize(stimulus.timeSteps),initial=this.stepIndex(stimulus);
+    this.glyphTimeIndex=initial;
+    const controls=`<label class="glyph-time-control" title="Destacar o mesmo instante em todos os glifos"><span>Instante</span><input type="range" min="0" max="${Math.max(0,stimulus.timeSteps-1)}" step="1" value="${initial}" data-glyph-time-slider aria-label="Instante destacado nos glifos"><output data-glyph-time-output>t = ${stimulus.frameTimes[initial]??initial}</output></label>`;
+    this.container.innerHTML=`${this.renderHeader('Glifo','Cada região contém uma grade temporal completa.',controls)}<div class="pe-glyph-view"><p class="pe-glyph-hint">Cada célula representa um instante. Arraste o slider ou clique em uma célula para destacar o mesmo instante em todos os glifos.</p><div class="pe-glyph-stage"><div class="pe-glyph-map"></div><svg class="pe-glyph-leaders" aria-hidden="true"></svg><div class="pe-glyph-layer"></div></div></div>`;
+    const stage=this.container.querySelector('.pe-glyph-stage'),map=this.container.querySelector('.pe-glyph-map'),layer=this.container.querySelector('.pe-glyph-layer');
+    renderRegionMap(map,stimulus,{}, {neutral:true});
+    for(const region of stimulus.regions){
+      const glyph=document.createElement('div');glyph.className='pe-glyph';glyph.dataset.regionId=region.id;glyph.tabIndex=0;glyph.setAttribute('role','group');glyph.setAttribute('aria-label',`${region.name||region.id}: série temporal de infectados`);glyph.style.setProperty('--glyph-cell-size',`${cellSize}px`);
+      const cells=document.createElement('div');cells.className='pe-glyph-cells';cells.style.gridTemplateColumns=`repeat(${dims.cols}, var(--glyph-cell-size))`;
+      for(let ti=0;ti<stimulus.timeSteps;ti++){const cell=document.createElement('span');cell.className='pe-glyph-cell';cell.dataset.timeIndex=String(ti);cell.style.background=valueColor(stimulus.series[region.id]?.[ti]||0);cell.title=`t = ${stimulus.frameTimes[ti]??ti} · ${Number(stimulus.series[region.id]?.[ti]||0)}% infectados`;cells.appendChild(cell);}
+      glyph.appendChild(cells);layer.appendChild(glyph);
+    }
+    const selectRegion=(id,time=null)=>{this.glyphSelectedRegionId=id;this.applyGlyphRegionHighlight(id,true);this.actions.onRegionClick?.(id,time==null?(stimulus.frameTimes[this.glyphTimeIndex]??this.glyphTimeIndex):time);};
+    const setTime=(index,notify=true)=>{const i=Math.max(0,Math.min(stimulus.timeSteps-1,Number(index)||0));this.glyphTimeIndex=i;this.updateGlyph(stimulus,i,notify);};
+    const slider=this.container.querySelector('[data-glyph-time-slider]');slider?.addEventListener('input',()=>setTime(Number(slider.value),true));
+    layer.addEventListener('pointerover',e=>{const glyph=e.target.closest('.pe-glyph');if(glyph)this.applyGlyphRegionHighlight(glyph.dataset.regionId,false);});
+    layer.addEventListener('pointerleave',()=>this.applyGlyphRegionHighlight(this.glyphSelectedRegionId,true));
+    layer.addEventListener('click',e=>{const glyph=e.target.closest('.pe-glyph');if(!glyph)return;const cell=e.target.closest('.pe-glyph-cell');if(cell)setTime(Number(cell.dataset.timeIndex),true);selectRegion(glyph.dataset.regionId,stimulus.frameTimes[this.glyphTimeIndex]??this.glyphTimeIndex);});
+    layer.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const glyph=e.target.closest('.pe-glyph');if(!glyph)return;e.preventDefault();selectRegion(glyph.dataset.regionId);});
+    map.addEventListener('pointerover',e=>{const shape=e.target.closest('.tech-region-shape');if(shape)this.applyGlyphRegionHighlight(shape.dataset.regionId,false);});
+    map.addEventListener('pointerleave',()=>this.applyGlyphRegionHighlight(this.glyphSelectedRegionId,true));
+    map.addEventListener('click',e=>{const shape=e.target.closest('.tech-region-shape');if(shape)selectRegion(shape.dataset.regionId);});
+    requestAnimationFrame(()=>{this.layoutGlyphs(stimulus);this.updateGlyph(stimulus,initial,false);});
+  }
+  updateGlyph(stimulus,index=this.glyphTimeIndex,notify=false){
+    if(this.mode!=='glyph')return;const i=Math.max(0,Math.min(stimulus.timeSteps-1,Number(index)||0));this.glyphTimeIndex=i;
+    this.container.querySelectorAll('.pe-glyph-cell.time-selected').forEach(cell=>cell.classList.remove('time-selected'));
+    this.container.querySelectorAll(`.pe-glyph-cell[data-time-index="${i}"]`).forEach(cell=>cell.classList.add('time-selected'));
+    const slider=this.container.querySelector('[data-glyph-time-slider]'),output=this.container.querySelector('[data-glyph-time-output]');if(slider)slider.value=String(i);if(output)output.textContent=`t = ${stimulus.frameTimes[i]??i}`;
+    if(notify)this.actions.onTimeChange?.(stimulus.frameTimes[i]??i);
+  }
+  applyGlyphRegionHighlight(id,persistent=false){
+    this.container.querySelectorAll('.pe-glyph.region-hover,.pe-glyph.region-selected').forEach(el=>el.classList.remove('region-hover','region-selected'));
+    this.container.querySelectorAll('.pe-glyph-map .tech-region-shape.linked-hover').forEach(el=>el.classList.remove('linked-hover'));
+    const target=id?this.container.querySelector(`.pe-glyph[data-region-id="${CSS.escape(id)}"]`):null,mapShape=id?this.container.querySelector(`.pe-glyph-map [data-region-id="${CSS.escape(id)}"]`):null;
+    if(target)target.classList.add(persistent?'region-selected':'region-hover');if(mapShape)mapShape.classList.add('linked-hover');
+  }
+  layoutGlyphs(stimulus){
+    const stage=this.container.querySelector('.pe-glyph-stage'),layer=this.container.querySelector('.pe-glyph-layer'),leaders=this.container.querySelector('.pe-glyph-leaders');if(!stage||!layer||!leaders||!stimulus)return;
+    const containerRect=this.container.getBoundingClientRect(),stageBefore=stage.getBoundingClientRect(),containerStyle=getComputedStyle(this.container),bottomPad=parseFloat(containerStyle.paddingBottom)||0;
+    const fitHeight=Math.max(40,Math.floor(containerRect.bottom-bottomPad-stageBefore.top-1));
+    stage.style.setProperty('--glyph-fit-height',`${fitHeight}px`);
+    const sr=stage.getBoundingClientRect();if(sr.width<80||sr.height<40)return;
+    const dims=glyphGridDimensions(stimulus.timeSteps),regionCount=Math.max(1,stimulus.regions.length);
+    const footprint=Math.sqrt((sr.width*sr.height)/(regionCount*1.45));
+    const usable=Math.max(8,footprint-8),gapPx=1;
+    const byW=(usable-Math.max(0,dims.cols-1)*gapPx)/Math.max(1,dims.cols);
+    const byH=(usable-Math.max(0,dims.rows-1)*gapPx)/Math.max(1,dims.rows);
+    const fittedCell=Math.max(1,Math.min(6,Math.floor(Math.min(byW,byH))));
+    layer.querySelectorAll('.pe-glyph').forEach(g=>g.style.setProperty('--glyph-cell-size',`${fittedCell}px`));
+    const pad=6,gap=3,entries=[];
+    for(const region of stimulus.regions){const glyph=layer.querySelector(`.pe-glyph[data-region-id="${CSS.escape(region.id)}"]`),shape=stage.querySelector(`.pe-glyph-map [data-region-id="${CSS.escape(region.id)}"]`);if(!glyph||!shape)continue;const br=shape.getBoundingClientRect(),gr=glyph.getBoundingClientRect(),ax=br.left+br.width/2-sr.left,ay=br.top+br.height/2-sr.top;entries.push({id:region.id,glyph,ax,ay,x:ax,y:ay,w:Math.max(8,gr.width),h:Math.max(8,gr.height)});}
+    for(let iter=0;iter<24;iter++){
+      for(const e of entries){e.x+=(e.ax-e.x)*.055;e.y+=(e.ay-e.y)*.055;}
+      for(let a=0;a<entries.length;a++)for(let b=a+1;b<entries.length;b++){const A=entries[a],B=entries[b],dx=B.x-A.x,dy=B.y-A.y,ox=(A.w+B.w)/2+gap-Math.abs(dx),oy=(A.h+B.h)/2+gap-Math.abs(dy);if(ox<=0||oy<=0)continue;if(ox<oy){const push=ox/2+.25,sign=dx>=0?1:-1;A.x-=push*sign;B.x+=push*sign;}else{const push=oy/2+.25,sign=dy>=0?1:-1;A.y-=push*sign;B.y+=push*sign;}}
+      for(const e of entries){e.x=Math.max(pad+e.w/2,Math.min(sr.width-pad-e.w/2,e.x));e.y=Math.max(pad+e.h/2,Math.min(sr.height-pad-e.h/2,e.y));}
+    }
+    leaders.setAttribute('viewBox',`0 0 ${sr.width} ${sr.height}`);leaders.innerHTML='';
+    for(const e of entries){e.glyph.style.left=`${e.x}px`;e.glyph.style.top=`${e.y}px`;if(Math.hypot(e.x-e.ax,e.y-e.ay)>8){const line=document.createElementNS(SVG_NS,'line');line.setAttribute('x1',String(e.ax));line.setAttribute('y1',String(e.ay));line.setAttribute('x2',String(e.x));line.setAttribute('y2',String(e.y));leaders.appendChild(line);}}
+    this.applyGlyphRegionHighlight(this.glyphSelectedRegionId,true);
   }
   renderProjection(stimulus){
     const order=projectionOrder(stimulus),dist=adjacentDistances(order,stimulus.regions),maxDist=Math.max(...dist,1e-9);

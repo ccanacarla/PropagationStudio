@@ -1,3 +1,31 @@
+# Changelog
+
+## v4.8.2 — Glifo sem recorte vertical
+- O estágio do Glifo passa a usar a altura real disponível no painel de visualização.
+- Removida a combinação frágil `height: 0` + flex que podia provocar corte.
+- A hierarquia do workspace usa `minmax(0, 1fr)` para não extrapolar o viewport.
+- Células dos glifos podem reduzir até 1 px em cenários densos, preservando todos os instantes.
+- Sem rolagem vertical no modo Glifo.
+- Nenhuma alteração no motor SIRV ou nos dados da execução.
+
+## 4.8.1 — Glifo ajustado ao viewport
+
+- Corrige o corte vertical da visualização Glifo.
+- O workspace do Glifo passa a usar exclusivamente a altura disponível, sem rolagem vertical.
+- O tamanho das células temporais é ajustado automaticamente conforme área disponível, número de regiões e quantidade de instantes.
+- Todos os glifos continuam presentes no mapa; não há amostragem nem remoção de instantes.
+- Nenhuma alteração no motor SIRV ou nos dados das execuções.
+
+# v4.8.0
+
+- Adicionada a técnica **Glifo**, baseada no desenho de Peña-Araya et al. (CHI 2020).
+- Um glifo é associado a cada região e contém uma grade de células temporais; uma célula representa um instante da execução.
+- O Glifo reutiliza a mesma execução selecionada e a mesma escala fixa de Infectados (%) das demais técnicas.
+- Slider temporal destaca o mesmo instante em todos os glifos; clicar numa célula sincroniza o destaque global.
+- Hover destaca a região/glifo e clique mantém a região selecionada, integrando-se ao inspetor contextual do Studio.
+- Layout dos glifos aplica resolução de colisões com linhas-guia em regiões densas.
+- Motor SIRV, histórico das execuções e formatos de exportação não foram alterados.
+
 # v4.7.4
 
 - Corrige o layout do `canvas-card` para manter `canvas-legend` na faixa inferior no modo de construção.

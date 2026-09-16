@@ -576,7 +576,7 @@
 .visualization-mode-tabs {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px
 }
 
@@ -1144,5 +1144,154 @@
     .small-multiple-size input[type=range] {
         flex: 1 1 auto;
         width: auto;
+    }
+}
+
+/* v4.8 · Mapa com glifos temporais, baseado em Peña-Araya et al. (CHI 2020) */
+.pe-glyph-view{display:flex;flex-direction:column;gap:8px;min-height:0;height:100%}
+.pe-glyph-hint{margin:0;font-size:9px;line-height:1.35;color:#64748b}
+.glyph-time-control{display:inline-flex;flex-direction:row;align-items:center;gap:7px;margin-left:10px;color:#64748b;font-size:9px;font-weight:700;white-space:nowrap}
+.glyph-time-control input[type=range]{width:clamp(120px,18vw,260px);padding:0}
+.glyph-time-control output{min-width:46px;color:#334155;font-size:9px;font-variant-numeric:tabular-nums}
+.pe-glyph-stage{position:relative;flex:1;min-height:420px;height:min(72vh,780px);overflow:hidden;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px}
+.pe-glyph-map,.pe-glyph-layer,.pe-glyph-leaders{position:absolute;inset:0;width:100%;height:100%}
+.pe-glyph-map{z-index:0}
+.pe-glyph-map .tech-region-shape{fill:rgba(255,255,255,.72);stroke:rgba(71,85,105,.48);stroke-width:.65}
+.pe-glyph-map .tech-region-shape.linked-hover{stroke:#0f172a;stroke-width:2}
+.pe-glyph-leaders{z-index:1;pointer-events:none;overflow:visible}
+.pe-glyph-leaders line{stroke:rgba(71,85,105,.42);stroke-width:1;vector-effect:non-scaling-stroke}
+.pe-glyph-layer{z-index:2;pointer-events:none}
+.pe-glyph{position:absolute;transform:translate(-50%,-50%);display:block;padding:2px;border:1px solid rgba(100,116,139,.68);border-radius:3px;background:rgba(255,255,255,.94);box-shadow:0 1px 3px rgba(15,23,42,.12);pointer-events:auto;cursor:pointer;outline:none;transition:border-color .1s,box-shadow .1s,transform .1s}
+.pe-glyph:hover,.pe-glyph.region-hover{border-color:#334155;box-shadow:0 0 0 1px rgba(51,65,85,.35),0 2px 5px rgba(15,23,42,.16);z-index:4}
+.pe-glyph.region-selected{border-color:#0f172a;box-shadow:0 0 0 2px rgba(15,23,42,.22),0 2px 5px rgba(15,23,42,.18);z-index:5}
+.pe-glyph:focus-visible{box-shadow:0 0 0 2px #60a5fa,0 2px 5px rgba(15,23,42,.18);z-index:6}
+.pe-glyph-cells{display:grid;gap:1px;background:rgba(148,163,184,.22)}
+.pe-glyph-cell{display:block;width:var(--glyph-cell-size,4px);height:var(--glyph-cell-size,4px);min-width:2px;min-height:2px;position:relative;box-sizing:border-box}
+.pe-glyph-cell.time-selected{outline:1.5px solid #0f172a;outline-offset:-1px;z-index:2}
+.pe-glyph-cell:hover{outline:1.5px solid #475569;outline-offset:-1px;z-index:3}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"]{overflow:hidden}
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-view{height:100%;min-height:0}
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-stage{height:auto;min-height:0;flex:1}
+
+@media(max-width:900px){
+  .glyph-time-control{margin-left:0;flex-wrap:wrap;white-space:normal}
+  .glyph-time-control input[type=range]{width:min(52vw,220px)}
+  .pe-glyph-stage{min-height:360px}
+  .studio-layout.visualization-workspace #technique-view[data-mode="glyph"]{overflow:auto}
+}
+
+
+/* v4.8.1 — Glifo ajustado ao viewport: sem corte e sem rolagem vertical */
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] > .technique-heading {
+    flex: 0 0 auto;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-view {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-hint {
+    flex: 0 0 auto;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-stage {
+    flex: 1 1 0;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+}
+
+@media(max-width:900px) {
+    .studio-layout.visualization-workspace #technique-view[data-mode="glyph"] {
+        overflow: hidden;
+    }
+
+    .studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-stage {
+        min-height: 0;
+    }
+}
+
+
+/* v4.8.2 — Glifo: encaixe real no viewport, sem scroll e sem recorte */
+.studio-layout.visualization-workspace,
+.studio-layout.visualization-workspace .workspace,
+.studio-layout.visualization-workspace .canvas-card,
+.studio-layout.visualization-workspace .canvas-stage {
+    min-height: 0 !important;
+}
+
+.studio-layout.visualization-workspace .workspace {
+    grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.studio-layout.visualization-workspace .canvas-card {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden !important;
+    padding-bottom: 12px;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] > .technique-heading {
+    min-height: 0;
+    margin-bottom: 6px;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-view {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 5px;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-hint {
+    min-height: 0;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-stage {
+    position: relative;
+    width: 100%;
+    height: var(--glyph-fit-height, 100%) !important;
+    min-height: 0 !important;
+    max-height: var(--glyph-fit-height, none) !important;
+    overflow: hidden;
+    align-self: stretch;
+}
+
+.studio-layout.visualization-workspace #technique-view[data-mode="glyph"] .pe-glyph-cell {
+    min-width: 1px;
+    min-height: 1px;
+}
+
+@media(max-width:900px) {
+    .studio-layout.visualization-workspace,
+    .studio-layout.visualization-workspace .workspace {
+        min-height: 0 !important;
+    }
+
+    .studio-layout.visualization-workspace #technique-view[data-mode="glyph"] {
+        overflow: hidden !important;
     }
 }
