@@ -134,7 +134,7 @@ export default {
     geojsonAutoId: 'Generate automatically',
     geojsonUseId: 'Use ID',
     geojsonDefaultPopulationOption: 'Use default population',
-    spaceChangeWarning: 'Changing or rebuilding the space removes current origins, focuses, jumps, blocks, paths, and runs.'
+    spaceChangeWarning: 'Changing or rebuilding the space removes origins, focuses, jumps, blocks, and paths from the current scenario, but keeps saved runs.'
   },
   sirv: {
     heading: 'SIRV model',
@@ -186,7 +186,7 @@ export default {
     focuses: 'focuses',
     jumps: 'jumps',
     blockedRegions: 'blocked regions',
-    pathRegions: 'path regions',
+    pathRegions: 'paths',
     sectionOrigins: 'Origins',
     sectionFocuses: 'Focuses',
     sectionJumps: 'Jumps',
@@ -289,7 +289,7 @@ export default {
     focusTitle: 'Add focus', focusHelp: 'Click any region to schedule an independent focus.',
     jumpTitle: 'Add jump', jumpHelp: 'Select the jump source region and then a non-adjacent region.',
     barrierTitle: 'Vaccination block', barrierHelp: 'Click regions to increase vaccination. At 100%, the region leaves normal spatial connectivity.',
-    pathTitle: 'Susceptible path', pathHelp: 'Click a sequence of adjacent regions. Marked regions become more susceptible.',
+    pathTitle: 'Susceptible path', pathHelp: 'Click an origin or focus and continue through adjacent regions. Click an origin/focus again to start another branch.',
     eraseTitle: 'Erase', eraseHelp: 'Click a region to remove associated events, path, and block.',
     lastRegion: 'Last region: {id}.',
     firstRegion: 'First region: {id}.'

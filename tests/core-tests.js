@@ -15,7 +15,7 @@ const assert=(c,n)=>{if(c){console.log(`[PASSOU] ${n}`);passed++;}else{console.e
 const grid={rows:7,columns:7,defaultPopulation:1200,randomizePopulation:false,neighborhood:'moore',borderMode:'normal'};
 const sim={seed:12345,timeSteps:45,beta:.38,gamma:.08,nu:0,mobility:.65,localTransmissionWeight:1,spatialTransmissionWeight:1,parameterNoise:0,temporalUnit:'dia',initialVaccinationPct:15,initialVaccinationVariationPct:10};
 const direction={enabled:true,direction:'radial',directionProfile:'cone',coneAngle:35,directionStrength:5,forwardWeight:1,lateralLeak:.03,backwardLeak:0,diagonalPenalty:.85};
-const empty=()=>({origins:[],focuses:[],jumps:[],vaccinationBarriers:[],pathRegions:[],pathSettings:{susceptibilityMultiplier:2.5},barrierSettings:{vaccinationCoverage:100},direction:{...direction}});
+const empty=()=>({origins:[],focuses:[],jumps:[],vaccinationBarriers:[],pathRegions:[],paths:[],pathSettings:{susceptibilityMultiplier:2.5},barrierSettings:{vaccinationCoverage:100},direction:{...direction}});
 const run=(propagation,s=sim,g=grid,regions=createGrid(g.rows,g.columns,g))=>runSIRVSimulation({gridConfig:g,simulationConfig:s,regions,propagation});
 console.log('=== TESTES PROPAGATION STUDIO 4.4 ===');
 
@@ -139,11 +139,13 @@ const html=fs.readFileSync(new URL('../index.html', import.meta.url),'utf8');
 const appSource=fs.readFileSync(new URL('../js/app.js', import.meta.url),'utf8');
 assert(html.includes('Condições iniciais geradas pela semente')&&html.includes('Vacinação média inicial'),'Interface explica a geração S/V pela semente');
 assert(html.includes('Suscetibilidade do caminho')&&html.includes('Vacinação do bloqueio'),'Interface expõe o efeito de caminho e bloqueio');
-assert(appSource.includes('addVaccinationBarrier')&&appSource.includes('addPathRegion'),'Ferramentas espaciais usam propriedades regionais');
+assert(appSource.includes('addVaccinationBarrier')&&appSource.includes('startPath')&&appSource.includes('extendPath'),'Ferramentas espaciais suportam caminhos ramificados com propriedades regionais');
 assert(html.includes('Mapa sintético')&&html.includes('Importar mapa real')&&appSource.includes('normalizeGeoJSON'),'Interface oferece Grid, mapa sintético e importação GeoJSON');
 const referencedIds=[...appSource.matchAll(/\$\('#([^']+)'\)/g)].map(m=>m[1]);const missingIds=[...new Set(referencedIds)].filter(id=>!html.includes(`id=\"${id}\"`));
 assert(missingIds.length===0,`Todos os IDs acessados diretamente pelo app existem no HTML${missingIds.length?`: ${missingIds.join(', ')}`:''}`);
 assert(html.includes('Configuração desta execução')&&appSource.includes('renderRunConfiguration'),'Execução selecionada mostra a configuração salva no próprio run');
+const branchingRendererSource=fs.readFileSync(new URL('../js/visualization/grid-renderer.js', import.meta.url),'utf8');
+assert(branchingRendererSource.includes('propagation.paths')&&branchingRendererSource.includes('path.regionIds'),'Renderer desenha cada caminho separadamente, sem ligar ramificações distintas');
 assert(html.includes('./js/vendor/jszip.min.js')&&!html.includes('./node_modules/jszip/dist/jszip.min.js'),'Download ZIP usa biblioteca vendorizada e portátil para GitHub Pages');
 
 const playbackState=new AppState();
@@ -152,6 +154,43 @@ playbackState.selectRun('run-a');
 assert(playbackState.selectedRunId==='run-a'&&playbackState.viewingRunId==='run-a'&&playbackState.viewRun()?.name==='Exemplo A','Clicar em uma execução ativa o snapshot completo para reprodução');
 playbackState.updateSimulation({beta:.5});
 assert(playbackState.selectedRunId==='run-a'&&playbackState.viewingRunId===null,'Editar o cenário atual sai da visualização da execução sem perder sua seleção');
+
+
+
+// Multiple susceptible paths can branch from the same origin/focus.
+const branchedPathState=new AppState(), branchOriginId='R_4_4';
+branchedPathState.addOrigin(branchOriginId);
+const branchOrigin=branchedPathState.propagation.origins.find(o=>o.regionId===branchOriginId);
+const firstPath=branchedPathState.startPath(branchOriginId,{sourceType:'origin',sourceEventId:branchOrigin.id});
+branchedPathState.extendPath(firstPath.id,'R_4_5');
+branchedPathState.extendPath(firstPath.id,'R_4_6');
+const secondPath=branchedPathState.startPath(branchOriginId,{sourceType:'origin',sourceEventId:branchOrigin.id});
+branchedPathState.extendPath(secondPath.id,'R_5_4');
+branchedPathState.extendPath(secondPath.id,'R_6_4');
+assert(branchedPathState.propagation.paths.length===2&&branchedPathState.propagation.paths[0].regionIds.join(',')==='R_4_4,R_4_5,R_4_6'&&branchedPathState.propagation.paths[1].regionIds.join(',')==='R_4_4,R_5_4,R_6_4','Uma mesma origem pode iniciar vários caminhos independentes');
+assert(branchedPathState.propagation.pathRegions.filter(p=>p.regionId===branchOriginId).length===1&&branchedPathState.propagation.pathRegions.length===5,'Regiões compartilhadas entre caminhos mantêm um único modificador epidemiológico');
+
+const preservedRunsState=new AppState();
+preservedRunsState.runs=[{id:'run-kept',name:'Mantida',history:[new Map()],space:{mode:'grid'},grid:{...preservedRunsState.grid},simulationConfig:{...preservedRunsState.simulationConfig},regions:[...preservedRunsState.regions.values()].map(r=>structuredClone(r)),propagation:empty()}];
+preservedRunsState.selectedRunId='run-kept';
+preservedRunsState.viewingRunId='run-kept';
+preservedRunsState.rebuildSyntheticMap({regionCount:12,spatialSeed:81,irregularity:.4,defaultPopulation:700});
+assert(preservedRunsState.runs.length===1&&preservedRunsState.runs[0].id==='run-kept'&&preservedRunsState.selectedRunId==='run-kept'&&preservedRunsState.viewingRunId===null,'Trocar Grid/Mapa preserva o histórico de execuções e apenas sai da visualização ativa');
+
+const restoreState=new AppState(), restorePropagation=empty(), restoreRegion=structuredClone([...restoreState.regions.values()][0]);
+restorePropagation.origins=[{id:'origin-snapshot',regionId:restoreRegion.id,startTime:0,infectedCount:33,duration:1,enabled:true}];
+restorePropagation.direction.forwardWeight=.73;
+const savedSnapshot={id:'run-snapshot',name:'Snapshot',history:[new Map()],space:{...structuredClone(restoreState.space),mode:'grid',sourceLabel:'Grid salvo'},grid:{...restoreState.grid,rows:11,columns:13},simulationConfig:{...restoreState.simulationConfig,seed:987,beta:.61,timeSteps:77},regions:[{...restoreRegion,population:4321}],propagation:restorePropagation};
+restoreState.runs=[savedSnapshot];
+restoreState.grid={...restoreState.grid,rows:3,columns:4};
+restoreState.simulationConfig={...restoreState.simulationConfig,seed:1,beta:.05,timeSteps:5};
+restoreState.propagation=empty();
+restoreState.selectRun('run-snapshot');
+assert(restoreState.grid.rows===11&&restoreState.grid.columns===13&&restoreState.simulationConfig.seed===987&&restoreState.simulationConfig.beta===.61&&restoreState.simulationConfig.timeSteps===77&&restoreState.propagation.origins[0]?.infectedCount===33&&restoreState.regions.get(restoreRegion.id)?.population===4321&&!restoreState.dirty,'Selecionar uma execução restaura espaço, simulação, propagação e regiões do snapshot salvo');
+restoreState.updateSimulation({beta:.19});
+restoreState.updateDirection({forwardWeight:.11});
+restoreState.regions.get(restoreRegion.id).population=99;
+assert(savedSnapshot.simulationConfig.beta===.61&&savedSnapshot.propagation.direction.forwardWeight===.73&&savedSnapshot.regions[0].population===4321,'Editar o Studio após restaurar uma execução não altera o snapshot histórico');
 const rendererSource=fs.readFileSync(new URL('../js/visualization/grid-renderer.js', import.meta.url),'utf8');
 assert(rendererSource.includes('viewRun()')&&rendererSource.includes('viewGrid()')&&rendererSource.includes('viewPropagation()')&&rendererSource.includes('viewRegions()'),'Renderer usa espaço, grid, regiões e propagação do snapshot selecionado');
 const animationSource=fs.readFileSync(new URL('../js/visualization/animation.js', import.meta.url),'utf8');

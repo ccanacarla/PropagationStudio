@@ -134,7 +134,7 @@ export default {
     geojsonAutoId: 'Gerar automaticamente',
     geojsonUseId: 'Usar o ID',
     geojsonDefaultPopulationOption: 'Usar população padrão',
-    spaceChangeWarning: 'Trocar ou recriar o espaço remove origens, focos, saltos, bloqueios, caminhos e execuções atuais.'
+    spaceChangeWarning: 'Trocar ou recriar o espaço remove origens, focos, saltos, bloqueios e caminhos do cenário atual, mas mantém as execuções salvas.'
   },
   sirv: {
     heading: 'Modelo SIRV',
@@ -186,7 +186,7 @@ export default {
     focuses: 'focos',
     jumps: 'saltos',
     blockedRegions: 'regiões bloqueadas',
-    pathRegions: 'regiões no caminho',
+    pathRegions: 'caminhos',
     sectionOrigins: 'Origens',
     sectionFocuses: 'Focos',
     sectionJumps: 'Saltos',
@@ -289,7 +289,7 @@ export default {
     focusTitle: 'Adicionar foco', focusHelp: 'Clique em qualquer região para programar um foco independente.',
     jumpTitle: 'Adicionar salto', jumpHelp: 'Selecione a região de origem do salto e depois uma região não adjacente.',
     barrierTitle: 'Bloqueio vacinal', barrierHelp: 'Clique em regiões para aumentar a vacinação. Com 100%, a região sai da conectividade espacial normal.',
-    pathTitle: 'Caminho suscetível', pathHelp: 'Clique em uma sequência de regiões adjacentes. As regiões marcadas ficam mais suscetíveis.',
+    pathTitle: 'Caminho suscetível', pathHelp: 'Clique em uma origem ou foco e siga por regiões adjacentes. Clique novamente em uma origem/foco para iniciar outra ramificação.',
     eraseTitle: 'Apagar', eraseHelp: 'Clique em uma região para remover eventos, caminho e bloqueio associados.',
     lastRegion: 'Última região: {id}.',
     firstRegion: 'Primeira região: {id}.'
