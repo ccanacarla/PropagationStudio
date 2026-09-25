@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { buildTechniqueStimulus } from '../js/visualization/technique-data.js';
 import { hilbertOrder, ahcWardOrder, projectionOrder } from '../js/visualization/technique-ordering.js';
+import { describeRun, assemblePdf, configurationReportDocumentHtml, runConfigurationMiniature } from '../js/export/report-pdf.js';
 
 let passed=0;
 function test(name,fn){try{fn();passed++;console.log(`[PASSOU] ${name}`);}catch(e){console.error(`[FALHOU] ${name}`);throw e;}}
@@ -111,4 +112,35 @@ test('Glifo usa mapa único e destaque temporal global, sem recalcular a simula�
   assert.match(app,/\['animation', 'small_multiples', 'projection1d', 'glyph'\]/);
   assert.match(app,/runSIRVSimulation/);
 });
+
+
+test('Relatório PDF descreve espaço, simulação e eventos da execução',()=>{
+  const sample={...run,createdAt:'2026-09-24T12:00:00.000Z',status:'review',notes:'Observação de teste',seed:42,simulationConfig:{seed:42,timeSteps:2,beta:.2,gamma:.1,nu:.01,mobility:.3,localTransmissionWeight:.6,spatialTransmissionWeight:.4,parameterNoise:0,initialVaccinationPct:5,initialVaccinationVariationPct:1,temporalUnit:'dia'},propagation:{origins:[{regionId:'R_1_1',startTime:0,infectedCount:20,duration:1}],focuses:[{regionId:'R_2_2',startTime:4,infectedCount:10,duration:1}],jumps:[],vaccinationBarriers:[],paths:[{regionIds:['R_1_1','R_1_2']}],pathRegions:[],pathSettings:{susceptibilityMultiplier:2},direction:{enabled:true,direction:'radial',directionProfile:'cone',directionStrength:1}}};
+  const d=describeRun(sample);assert.ok(d.spaceLines.some(x=>x.includes('Grid')));assert.equal(d.origins.length,1);assert.equal(d.focuses.length,1);assert.equal(d.paths.length,1);assert.ok(d.simLines.some(x=>x.includes('β=0.2')));
+});
+
+test('Relatório visual consolidado usa o mapa de configurações das execuções',()=>{
+  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const app=fs.readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  const report=fs.readFileSync(new URL('../js/export/report-pdf.js',import.meta.url),'utf8');
+  assert.match(html,/id="btn-export-report-pdf"/);
+  assert.match(html,/Relatório visual das execuções/);
+  assert.match(app,/generateRunsPdf/);
+  assert.match(report,/configurationReportDocumentHtml/);
+  assert.match(report,/runConfigurationMiniature/);
+  assert.match(report,/report-grid/);
+  assert.match(report,/Imprimir \/ Salvar PDF/);
+  assert.match(report,/run\?\.notes|run\.notes/);
+});
+
+test('Mapa de configuração desenha origem, caminho e bloqueio do snapshot salvo',()=>{
+  const sample={...run,simulationConfig:{timeSteps:30,beta:.34,gamma:.1,nu:0,mobility:.32,seed:12345},propagation:{origins:[{regionId:'R_1_1',enabled:true}],focuses:[],jumps:[],vaccinationBarriers:[{regionId:'R_2_2',vaccinationCoverage:100,enabled:true}],paths:[{regionIds:['R_1_1','R_1_2'],enabled:true}],pathRegions:[],direction:{enabled:true,direction:'west_to_east'}},notes:'Observação de teste'};
+  const svg=runConfigurationMiniature(sample);assert.match(svg,/report-mini-space/);assert.match(svg,/polyline/);assert.match(svg,/circle/);assert.match(svg,/×/);
+  const doc=configurationReportDocumentHtml({name:'Experimento'},[sample],{generatedAt:'agora'});assert.match(doc,/Teste/);assert.match(doc,/Observação de teste/);assert.match(doc,/Oeste → Leste/);assert.match(doc,/30 passos/);
+});
+
+test('Montador PDF gera Blob PDF sem dependência externa',()=>{
+  const blob=assemblePdf([{jpegBytes:new Uint8Array([255,216,255,217]),widthPx:1,heightPx:1,pdfWidth:595.28,pdfHeight:841.89}]);assert.equal(blob.type,'application/pdf');assert.ok(blob.size>200);
+});
+
 console.log(`RESUMO VISUALIZAÇÕES: ${passed} passaram; 0 falharam.`);

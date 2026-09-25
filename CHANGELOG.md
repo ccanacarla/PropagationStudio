@@ -1,5 +1,22 @@
 # Changelog
 
+## v4.8.4 — Relatório visual de configurações
+- O relatório de execuções foi redesenhado no formato de **mapa de configurações**: duas colunas de execuções, miniatura espacial e resumo textual.
+- Cada miniatura usa o snapshot salvo da própria execução e mostra origens, focos, caminhos suscetíveis, bloqueios (totais e parciais) e saltos.
+- O resumo mostra tipo e tamanho do espaço, número de passos, direção, eventos principais, parâmetros SIRV e observações da execução.
+- Grid, mapa sintético e GeoJSON são suportados.
+- O relatório abre em uma janela própria para revisão e oferece **Imprimir / Salvar PDF** sem rasterizar a interface.
+- A geração não altera a execução selecionada nem a configuração atual do Studio.
+
+## v4.8.3 — Relatório PDF consolidado
+- Adicionado **Relatório de todas as execuções (.pdf)** na aba Execuções.
+- O relatório inclui, para cada execução, configuração do experimento, tipo/tamanho do espaço, parâmetros SIRV, origens, focos, saltos, bloqueios, caminhos, direção, resumo e observações.
+- Incluídas visualizações estáticas de **Small Multiples**, **Projeção 1D** e **Glifos**; animação é deliberadamente omitida.
+- Small Multiples é paginado automaticamente para preservar legibilidade em execuções longas.
+- A exportação usa os próprios componentes HTML/SVG do workspace de visualização e o mecanismo nativo de impressão do navegador, evitando a conversão frágil de HTML para imagem.
+- Todos os quadros de Small Multiples são preservados e distribuídos em páginas quando necessário.
+- Ao final da preparação, o navegador abre o diálogo de impressão; use **Salvar como PDF** para gerar o arquivo.
+
 ## v4.8.2 — Glifo sem recorte vertical
 - O estágio do Glifo passa a usar a altura real disponível no painel de visualização.
 - Removida a combinação frágil `height: 0` + flex que podia provocar corte.

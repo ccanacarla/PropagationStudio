@@ -68,6 +68,8 @@ O botão **Download (.zip)** gera um pacote com:
 - `summary.json`
 - `regions.geojson` quando o espaço possui geometria poligonal
 
+O botão **Relatório visual das execuções** abre uma visão consolidada inspirada em um mapa de configurações. Cada execução aparece como um card com uma miniatura do próprio snapshot espacial e um resumo textual. A miniatura mostra origens, focos, caminhos suscetíveis, bloqueios totais/parciais e saltos; o resumo mostra espaço, tamanho, passos, direção, parâmetros SIRV e observações. O relatório usa duas colunas, funciona com Grid, mapa sintético e GeoJSON e pode ser revisado na tela antes da exportação. Use **Imprimir / Salvar PDF** na própria janela do relatório para gerar o PDF.
+
 O arquivo de projeto salva geometria, atributos importados, topologia, cenário, execuções, execução selecionada e instante atual para reabertura posterior.
 
 ## Workspaces de construção e visualização
